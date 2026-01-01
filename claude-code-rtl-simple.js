@@ -16,7 +16,7 @@
 
     const CONFIG = {
         fontFamily: '"Segoe UI", "Arial Hebrew", "David", "Miriam", "Tahoma", "Arial", sans-serif',
-        chatSelectors: ['.V.D', '.V.o'], // .V.D = user messages, .V.o = assistant messages
+        chatSelectors: ['.V.D', '.V.o', '._r', '.d.undefined'], // .V.D = user, .V.o = assistant, ._r = RTL container, .d.undefined = buttons
         inputSelectors: ['div[contenteditable="plaintext-only"][role="textbox"][aria-label="Message input"]']
     };
 
@@ -68,6 +68,14 @@
         element.style.textAlign = 'right';
         element.style.fontFamily = CONFIG.fontFamily;
         element.setAttribute('data-rtl-applied', 'true');
+
+        // Apply to buttons specifically to ensure both properties are set
+        element.querySelectorAll('button').forEach(btn => {
+            if (containsRTL(btn.textContent)) {
+                btn.style.direction = 'rtl';
+                btn.style.textAlign = 'right';
+            }
+        });
 
         element.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6').forEach(el => {
             const text = el.textContent.trim();

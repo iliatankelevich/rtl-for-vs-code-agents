@@ -10,7 +10,7 @@ Right-to-Left (RTL) support for AI chat agents in Visual Studio Code.
 - ✅ Supports Hebrew, Arabic, Persian, Urdu, and other RTL languages
 - ✅ Code blocks remain LTR (left-to-right) - essential for readability
 - ✅ Bidirectional text support (mixed RTL + English)
-- ✅ Works with GitHub Copilot Chat, Claude Code, Google Antigravity, and other AI chat extensions
+- ✅ Works with GitHub Copilot Chat, Claude Code (VS Code & Cursor), Google Antigravity, and other AI chat extensions
 - ✅ Input box RTL support - automatically switches direction as you type
 - ✅ Auto-applies to dynamically loaded content
 
@@ -120,9 +120,9 @@ Install **"Custom CSS and JS Loader"** from the VS Code Marketplace:
 3. Select the command
 4. VS Code will ask to restart - confirm
 
-## Additional Setup for Claude Code
+## Additional Setup for Claude Code (VS Code & Cursor)
 
-The above installation works for **Copilot Chat** and most agents. For **Claude Code**, you need one additional step because it runs in an isolated webview.
+The above installation works for **Copilot Chat** and most agents. For **Claude Code** (both in VS Code and Cursor), you need one additional step because it runs in an isolated webview.
 
 ### Automated Injection (Recommended)
 
@@ -140,8 +140,10 @@ If you installed manually or prefer to do it yourself:
 1. **Close VS Code completely**
 
 2. **Locate your Claude Code extension folder:**
-   - Windows: `%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*\webview\`
-   - Mac/Linux: `~/.vscode/extensions/anthropic.claude-code-*/webview/`
+   - VS Code (Windows): `%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*\webview\`
+   - VS Code (Mac/Linux): `~/.vscode/extensions/anthropic.claude-code-*/webview/`
+   - Cursor (Windows): `%USERPROFILE%\.cursor\extensions\anthropic.claude-code-*\webview\`
+   - Cursor (Mac/Linux): `~/.cursor/extensions/anthropic.claude-code-*/webview/`
 
 3. **Backup the original file:**
    ```bash
@@ -365,7 +367,8 @@ Persian and Urdu are covered by the Arabic ranges.
 
 Currently tested with:
 - ✅ GitHub Copilot Chat
-- ✅ Claude Code (requires additional setup - see above)
+- ✅ Claude Code in VS Code (requires additional setup - see above)
+- ✅ Claude Code in Cursor (requires additional setup - see above)
 - ✅ Google Antigravity (requires additional setup - see above)
 
 Should also work with other AI chat extensions that use similar UI patterns. If you find an extension that doesn't work, please open an issue with the CSS selector information.

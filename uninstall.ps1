@@ -23,10 +23,10 @@ if ($ClaudeExtension) {
         try {
             Remove-Item $IndexJs -Force
             Move-Item $BackupPath $IndexJs
-            Write-Host "   ✓ Restored index.js from backup" -ForegroundColor Green
+            Write-Host "   OK Restored index.js from backup" -ForegroundColor Green
             $RestoredCount++
         } catch {
-            Write-Host "   ✗ Error restoring index.js: $_" -ForegroundColor Red
+            Write-Host "   X Error restoring index.js: $_" -ForegroundColor Red
             $ErrorCount++
         }
     } else {
@@ -50,10 +50,10 @@ if (Test-Path $AntigravityPath) {
         try {
             Remove-Item $ChatJsPath -Force
             Move-Item $BackupPath $ChatJsPath
-            Write-Host "   ✓ Restored chat.js from backup" -ForegroundColor Green
+            Write-Host "   OK Restored chat.js from backup" -ForegroundColor Green
             $RestoredCount++
         } catch {
-            Write-Host "   ✗ Error restoring chat.js: $_" -ForegroundColor Red
+            Write-Host "   X Error restoring chat.js: $_" -ForegroundColor Red
             $ErrorCount++
         }
     } else {
@@ -76,26 +76,26 @@ if (Test-Path $SettingsPath) {
         try {
             $Settings = Get-Content $SettingsPath -Raw | ConvertFrom-Json
 
-            if ($Settings.PSObject.Properties['vscode_custom_css.imports']) {
+            if ($Settings.PSObject.Properties["vscode_custom_css.imports"]) {
                 # Filter out RTL script entries
-                $Settings.'vscode_custom_css.imports' = $Settings.'vscode_custom_css.imports' | Where-Object {
-                    $_ -notmatch 'rtl-for-vscode-agents\.js'
+                $Settings."vscode_custom_css.imports" = $Settings."vscode_custom_css.imports" | Where-Object {
+                    $_ -notmatch "rtl-for-vscode-agents\.js"
                 }
 
                 # Remove the property if array is empty
-                if ($Settings.'vscode_custom_css.imports'.Count -eq 0) {
-                    $Settings.PSObject.Properties.Remove('vscode_custom_css.imports')
+                if ($Settings."vscode_custom_css.imports".Count -eq 0) {
+                    $Settings.PSObject.Properties.Remove("vscode_custom_css.imports")
                 }
 
                 # Save settings
                 $Settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsPath
-                Write-Host "   ✓ Removed RTL script from settings.json" -ForegroundColor Green
+                Write-Host "   OK Removed RTL script from settings.json" -ForegroundColor Green
                 $RestoredCount++
             } else {
                 Write-Host "   - No vscode_custom_css.imports found in settings" -ForegroundColor Gray
             }
         } catch {
-            Write-Host "   ✗ Error updating settings.json: $_" -ForegroundColor Red
+            Write-Host "   X Error updating settings.json: $_" -ForegroundColor Red
             $ErrorCount++
         }
     } else {
@@ -132,5 +132,5 @@ if ($RestoredCount -gt 0) {
 }
 
 Write-Host ""
-Write-Host "Press any key to exit..."
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+Write-Host "Press any key to exit..." -ForegroundColor Cyan
+$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')

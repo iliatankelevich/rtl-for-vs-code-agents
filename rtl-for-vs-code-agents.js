@@ -35,6 +35,8 @@
             '.rendered-markdown',
             '.V.D', // Claude Code user messages
             '.V.o', // Claude Code assistant messages
+            '._r',  // Claude Code RTL content container
+            '.d.undefined',   // Claude Code buttons with RTL content
         ],
 
         // Selectors for input boxes
@@ -134,6 +136,14 @@
         element.style.textAlign = 'right';
         element.style.fontFamily = CONFIG.fontFamily;
         element.setAttribute('data-rtl-applied', 'true');
+
+        // Apply to buttons specifically to ensure both properties are set
+        element.querySelectorAll('button').forEach(btn => {
+            if (containsRTL(btn.textContent)) {
+                btn.style.direction = 'rtl';
+                btn.style.textAlign = 'right';
+            }
+        });
 
         // Apply to paragraphs - check each child independently
         element.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6').forEach(el => {
