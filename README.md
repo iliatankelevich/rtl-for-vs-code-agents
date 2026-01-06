@@ -443,12 +443,6 @@ Contributions are welcome!
 - Support for a new AI agent? Submit a PR with the CSS selectors
 - Improvement ideas? Let's discuss in issues
 
-## Credits
-
-Based on [NabiKAZ/vscode-copilot-rtl](https://github.com/NabiKAZ/vscode-copilot-rtl)
-
-Extended with automatic RTL detection and support for multiple AI agents.
-
 ## License
 
-GPL-3.0 (following the original project's license)
+GPL-3.0

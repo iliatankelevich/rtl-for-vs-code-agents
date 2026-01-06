@@ -1,11 +1,9 @@
 /**
  * RTL Support for VS Code AI Chat Agents
  * Supports Hebrew, Arabic, Persian, and other RTL languages
- * 
- * Works with: GitHub Copilot Chat, and other AI chat extensions
- * 
- * Based on NabiKAZ's vscode-copilot-rtl project (GPL-3.0)
- * 
+ *
+ * Works with: GitHub Copilot Chat, Claude Code, and other AI chat extensions
+ *
  * Installation:
  * 1. Install "Custom CSS and JS Loader" extension in VS Code
  * 2. Save this file somewhere permanent (e.g., C:\Users\YourName\vscode-custom\rtl-for-vscode-agents.js)
@@ -50,6 +48,10 @@
         // How often to check for new content (ms)
         checkInterval: 500
     };
+
+    // Constants for CSS-based RTL (Monaco Editor inputs)
+    const RTL_STYLE_ID = 'rtl-monaco-style';
+    const RTL_MODE_CLASS = 'rtl-mode-active';
 
     // RTL Unicode ranges
     const RTL_RANGES = [
@@ -204,6 +206,68 @@
     }
 
     /**
+     * Inject CSS rules for RTL support in Monaco Editor (one-time operation)
+     * This prevents flickering because CSS applies immediately when elements are created
+     */
+    function injectRTLStyles() {
+        if (document.getElementById(RTL_STYLE_ID)) {
+            return; // Already injected
+        }
+
+        const style = document.createElement('style');
+        style.id = RTL_STYLE_ID;
+        style.textContent = `
+            /* RTL Mode for Monaco Editor Inputs (Copilot) */
+            .${RTL_MODE_CLASS} .view-line,
+            .${RTL_MODE_CLASS} .view-line[dir="ltr"] {
+                direction: rtl !important;
+                text-align: right !important;
+                unicode-bidi: bidi-override !important;
+                font-family: ${CONFIG.fontFamily} !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    /**
+     * Find the stable Monaco editor parent for a view-line element
+     * This parent persists across keystrokes, unlike .view-line which is recreated
+     */
+    function findMonacoParent(viewLineElement) {
+        // Look for the monaco-editor container (most stable)
+        let parent = viewLineElement.closest('.monaco-editor');
+        if (parent) return parent;
+
+        // Fallback to view-lines
+        parent = viewLineElement.closest('.view-lines');
+        return parent || viewLineElement.parentElement;
+    }
+
+    /**
+     * Process Monaco Editor input boxes for RTL
+     * Uses CSS class toggle on parent instead of inline styles to prevent flickering
+     */
+    function processMonacoInputs() {
+        const viewLines = document.querySelectorAll('.view-line');
+
+        viewLines.forEach(viewLine => {
+            const text = viewLine.textContent || '';
+            const hasRTL = containsRTL(text);
+            const monacoParent = findMonacoParent(viewLine);
+
+            if (!monacoParent) return;
+
+            const isCurrentlyRTL = monacoParent.classList.contains(RTL_MODE_CLASS);
+
+            if (hasRTL && !isCurrentlyRTL) {
+                monacoParent.classList.add(RTL_MODE_CLASS);
+            } else if (!hasRTL && isCurrentlyRTL) {
+                monacoParent.classList.remove(RTL_MODE_CLASS);
+            }
+        });
+    }
+
+    /**
      * Process input boxes
      */
     function processInputs() {
@@ -324,6 +388,9 @@
      * Initialize the RTL support
      */
     function init() {
+        // Inject CSS styles first (one-time) - prevents flickering in Monaco inputs
+        injectRTLStyles();
+
         // Process existing elements
         processElements();
 
@@ -393,7 +460,8 @@
 
         // Process input boxes periodically (they don't trigger addedNodes)
         setInterval(() => {
-            processInputs();
+            processMonacoInputs(); // Monaco Editor inputs (Copilot) - uses CSS class toggle
+            processInputs();       // Other inputs (Claude Code) - uses inline styles
         }, 200);
 
         console.log('✅ RTL for VS Code Agents: Initialized');
