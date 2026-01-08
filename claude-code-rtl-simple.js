@@ -177,17 +177,40 @@
         console.log('RTL: Initializing...');
         processElements();
 
+        // Watch for DOM changes
         const observer = new MutationObserver((mutations) => {
-            let shouldProcess = false;
+            let hasNewNodes = false;
+            let hasTextChanges = false;
+
             mutations.forEach((mutation) => {
-                if (mutation.addedNodes.length > 0 || mutation.type === 'characterData') {
-                    shouldProcess = true;
+                if (mutation.addedNodes.length > 0) {
+                    hasNewNodes = true;
+                    // Process new nodes immediately
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) {
+                            const selector = CONFIG.chatSelectors.join(', ');
+                            if (node.matches && node.matches(selector)) {
+                                const needsRTL = shouldBeRTL(node);
+                                if (needsRTL) applyRTL(node);
+                            }
+                            node.querySelectorAll(selector).forEach(element => {
+                                const needsRTL = shouldBeRTL(element);
+                                if (needsRTL) applyRTL(element);
+                            });
+                        }
+                    });
+                }
+                if (mutation.type === 'characterData') {
+                    hasTextChanges = true;
                 }
             });
 
-            if (shouldProcess) {
+            // For streaming content updates, debounce and reprocess all
+            if (hasTextChanges || hasNewNodes) {
                 clearTimeout(window._rtlProcessTimeout);
-                window._rtlProcessTimeout = setTimeout(processElements, 100);
+                window._rtlProcessTimeout = setTimeout(() => {
+                    processElements(); // includes processInputs()
+                }, 50);
             }
         });
 
@@ -196,6 +219,9 @@
             subtree: true,
             characterData: true
         });
+
+        // Initial input processing
+        processInputs();
 
         console.log('✅ RTL for Claude Code: Active');
     }
