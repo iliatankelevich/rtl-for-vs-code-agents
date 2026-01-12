@@ -130,26 +130,31 @@ Write-Host "   Copied rtl-for-vscode-agents.js" -ForegroundColor Green
 
 # Update settings.json
 if (Test-Path $SettingsPath) {
-    $Settings = Get-Content $SettingsPath -Raw | ConvertFrom-Json
+    # Read file content (handles JSON with comments)
+    $RawContent = Get-Content $SettingsPath -Raw
 
     # Convert path to file:/// format
     $FileUrl = "file:///" + $DestScript.Replace('\', '/')
 
-    # Add or update vscode_custom_css.imports
-    if (-not $Settings.PSObject.Properties['vscode_custom_css.imports']) {
-        $Settings | Add-Member -MemberType NoteProperty -Name 'vscode_custom_css.imports' -Value @($FileUrl)
+    # Check if RTL script is already in settings
+    if ($RawContent -match [regex]::Escape($FileUrl)) {
+        Write-Host "   Script already in settings.json" -ForegroundColor Yellow
+    }
+    # Check if vscode_custom_css.imports exists
+    elseif ($RawContent -match '"vscode_custom_css\.imports"') {
+        # Add to existing array - find the array and add our entry
+        $UpdatedContent = $RawContent -replace '("vscode_custom_css\.imports"\s*:\s*\[)', "`$1`n        `"$FileUrl`","
+        $UpdatedContent | Set-Content $SettingsPath -NoNewline
+        Write-Host "   Updated vscode_custom_css.imports" -ForegroundColor Green
+    }
+    else {
+        # Add new property after the opening brace
+        $NewProperty = "`"vscode_custom_css.imports`": [`"$FileUrl`"],"
+        $UpdatedContent = $RawContent -replace '^\s*\{', "{`n    $NewProperty"
+        $UpdatedContent | Set-Content $SettingsPath -NoNewline
         Write-Host "   Added vscode_custom_css.imports to settings" -ForegroundColor Green
-    } else {
-        if ($Settings.'vscode_custom_css.imports' -notcontains $FileUrl) {
-            $Settings.'vscode_custom_css.imports' += $FileUrl
-            Write-Host "   Updated vscode_custom_css.imports" -ForegroundColor Green
-        } else {
-            Write-Host "   Script already in settings.json" -ForegroundColor Yellow
-        }
     }
 
-    # Save settings
-    $Settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsPath
     Write-Host "   Settings updated successfully!" -ForegroundColor Green
 } else {
     Write-Host "   Error: settings.json not found at $SettingsPath" -ForegroundColor Red

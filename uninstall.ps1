@@ -74,25 +74,25 @@ if (Test-Path $SettingsPath) {
 
     if ($RemoveFromSettings -eq 'y' -or $RemoveFromSettings -eq 'Y') {
         try {
-            $Settings = Get-Content $SettingsPath -Raw | ConvertFrom-Json
+            # Read file content
+            $RawContent = Get-Content $SettingsPath -Raw
 
-            if ($Settings.PSObject.Properties["vscode_custom_css.imports"]) {
-                # Filter out RTL script entries
-                $Settings."vscode_custom_css.imports" = $Settings."vscode_custom_css.imports" | Where-Object {
-                    $_ -notmatch "rtl-for-vscode-agents\.js"
-                }
+            # Check if file contains RTL script reference
+            if ($RawContent -match "rtl-for-vscode-agents\.js") {
+                # Use regex to remove the RTL script line (handles JSON with comments)
+                # Match the line containing rtl-for-vscode-agents.js and optional trailing comma
+                $UpdatedContent = $RawContent -replace '(?m)^\s*"[^"]*rtl-for-vscode-agents\.js[^"]*",?\s*\r?\n?', ''
 
-                # Remove the property if array is empty
-                if ($Settings."vscode_custom_css.imports".Count -eq 0) {
-                    $Settings.PSObject.Properties.Remove("vscode_custom_css.imports")
-                }
+                # Clean up any resulting double commas or trailing commas before ]
+                $UpdatedContent = $UpdatedContent -replace ',(\s*[\r\n]*\s*[,\]])', '$1'
+                $UpdatedContent = $UpdatedContent -replace ',(\s*\])', '$1'
 
-                # Save settings
-                $Settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsPath
+                # Save the updated content
+                $UpdatedContent | Set-Content $SettingsPath -NoNewline
                 Write-Host "   OK Removed RTL script from settings.json" -ForegroundColor Green
                 $RestoredCount++
             } else {
-                Write-Host "   - No vscode_custom_css.imports found in settings" -ForegroundColor Gray
+                Write-Host "   - RTL script not found in settings.json" -ForegroundColor Gray
             }
         } catch {
             Write-Host "   X Error updating settings.json: $_" -ForegroundColor Red

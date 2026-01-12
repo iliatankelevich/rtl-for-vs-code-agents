@@ -16,8 +16,8 @@
 
     const CONFIG = {
         fontFamily: '"Segoe UI", "Arial Hebrew", "David", "Miriam", "Tahoma", "Arial", sans-serif',
-        chatSelectors: ['.V.D', '.V.o', '._r', '.d.undefined'], // .V.D = user, .V.o = assistant, ._r = RTL container, .d.undefined = buttons
-        inputSelectors: ['div[contenteditable="plaintext-only"][role="textbox"][aria-label="Message input"]']
+        chatSelectors: ['.O.P', '.O.e', '._r', '.d.undefined'], // .V.D = user, .V.o = assistant, ._r = RTL container, .d.undefined = buttons
+        inputSelectors: ['div[contenteditable="plaintext-only"][aria-label="Message input"]']
     };
 
     const RTL_RANGES = [
