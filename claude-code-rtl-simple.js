@@ -16,7 +16,7 @@
 
     const CONFIG = {
         fontFamily: '"Segoe UI", "Arial Hebrew", "David", "Miriam", "Tahoma", "Arial", sans-serif',
-        chatSelectors: ['.P.e', '.P.e', '._r', '.d.undefined'], // .V.D = user, .V.o = assistant, ._r = RTL container, .d.undefined = buttons
+        chatSelectors: ['.X', '.P.e', '._r', '.d.undefined'], // .X = user, .P.e = assistant, ._r = RTL container, .d.undefined = buttons
         inputSelectors: ['div[contenteditable="plaintext-only"][aria-label="Message input"]']
     };
 
