@@ -1,5 +1,8 @@
 # RTL for VS Code Agents
 
+## Version
+3.0.4
+
 Right-to-Left (RTL) support for AI chat agents in Visual Studio Code.
 
 **Smart RTL detection** - automatically detects Hebrew, Arabic, Persian, and other RTL languages and applies RTL styling only when needed.
@@ -32,9 +35,24 @@ Right-to-Left (RTL) support for AI chat agents in Visual Studio Code.
 
 The easiest way to install RTL support is using the automated installer scripts:
 
+#### Step 1: Download the Repository
+
+1. Go to the [GitHub repository](https://github.com/YOUR_USERNAME/rtl-for-vs-code-agents)
+2. Click the green **"Code"** button
+3. Select **"Download ZIP"**
+4. Extract the ZIP file to a local folder (e.g., `C:\Users\YourName\Downloads\rtl-for-vs-code-agents`)
+
+#### Step 2: Run the Installer
+
+1. Open a terminal in the extracted folder:
+   - **Windows:** Right-click in the folder → "Open in Terminal" (or open PowerShell and `cd` to the folder)
+   - **Mac/Linux:** Right-click in the folder → "Open Terminal Here"
+
+2. Run the installation script:
+
 **Windows:**
 ```powershell
-.\install.ps1
+powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 **Mac/Linux:**
@@ -383,6 +401,21 @@ Should also work with other AI chat extensions that use similar UI patterns. If 
 
 ## Troubleshooting
 
+### PowerShell script cannot be loaded (Windows)
+
+If you see an error like:
+```
+The file install.ps1 cannot be loaded. The file is not digitally signed.
+You cannot run this script on the current system.
+```
+
+This is a PowerShell execution policy restriction. Use this command instead:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+This bypasses the policy for this script only without changing system settings.
+
 ### Styles not loading
 
 1. Verify the path in settings.json is correct
@@ -435,9 +468,46 @@ If RTL support suddenly stops working after updating VS Code, Claude Code, or An
 3. Add the selector to `CONFIG.chatSelectors` in the script
 4. Run "Reload Custom CSS and JS"
 
+## Changelog
+
+### v3.0.4
+- Improve install.ps1 to show dynamic success message based on configured agents
+- Enhance README with version section, changelog history, and PowerShell troubleshooting
+
+### v3.0.3
+- Fix user message selector (.X) for Claude Code
+- Update chat selectors for latest Claude Code version
+
+### v3.0.2
+- Update selectors for Claude Code 2.1.5 and fix JSON parsing in scripts
+
+### v3.0.1
+- Improve RTL detection for Claude Code streaming messages
+
+### v3.0.0
+- Fix input box RTL flickering in Copilot chat
+
+### v2.1.0
+- Add support for additional RTL selectors and Cursor compatibility
+- Update README.md with expanded documentation and installation instructions
+
+### v2.0.2
+- Optimize RTL detection: immediate processing without flickering
+
+### v2.0.1
+- Add Google Antigravity RTL support and uninstall script
+
+### v2.0.0
+- Add automated installation scripts and update README
+- Add RTL support for input boxes in Claude Code and Copilot
+
+### v1.0.0
+- Initial release with support for GitHub Copilot Chat
+- RTL script for VS Code agents
+
 ## Contributing
 
-Contributions are welcome! 
+Contributions are welcome!
 
 - Found a bug? Open an issue
 - Support for a new AI agent? Submit a PR with the CSS selectors

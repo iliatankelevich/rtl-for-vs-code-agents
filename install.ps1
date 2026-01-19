@@ -9,6 +9,9 @@ Write-Host ""
 # Get script directory
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+# Track which agents were configured
+$ConfiguredAgents = @()
+
 # 1. Find Claude Code extension folder
 Write-Host "Step 1: Locating Claude Code extension..." -ForegroundColor Yellow
 $ExtensionsPath = "$env:USERPROFILE\.vscode\extensions"
@@ -38,6 +41,7 @@ if ($ClaudeExtension) {
             $RtlScript = Get-Content (Join-Path $ScriptDir "claude-code-rtl-simple.js") -Raw
             Add-Content -Path $IndexJs -Value "`n$RtlScript"
             Write-Host "   RTL script injected successfully!" -ForegroundColor Green
+            $ConfiguredAgents += "Claude Code"
         } else {
             Write-Host "   Error: index.js not found in webview folder" -ForegroundColor Red
         }
@@ -87,6 +91,7 @@ if (Test-Path $AntigravityPath) {
                 $JsContent += $RtlScript
                 Set-Content -Path $ChatJsPath -Value $JsContent -NoNewline
                 Write-Host "   RTL script injected successfully!" -ForegroundColor Green
+                $ConfiguredAgents += "Antigravity"
             }
         } else {
             Write-Host "   Error: chat.js not found" -ForegroundColor Red
@@ -172,7 +177,19 @@ Write-Host "1. Install 'Custom CSS and JS Loader' extension if you haven't alrea
 Write-Host "2. Press Ctrl+Shift+P and run 'Enable Custom CSS and JS'" -ForegroundColor White
 Write-Host "3. Restart VS Code" -ForegroundColor White
 Write-Host ""
-Write-Host "RTL support will now work in Copilot, Claude Code, and Antigravity!" -ForegroundColor Green
+
+# Build dynamic message based on what was configured
+$ConfiguredAgents += "Copilot"  # Copilot is always configured via Custom CSS and JS Loader
+if ($ConfiguredAgents.Count -eq 1) {
+    $AgentsList = $ConfiguredAgents[0]
+} elseif ($ConfiguredAgents.Count -eq 2) {
+    $AgentsList = "$($ConfiguredAgents[0]) and $($ConfiguredAgents[1])"
+} else {
+    $LastAgent = $ConfiguredAgents[-1]
+    $OtherAgents = $ConfiguredAgents[0..($ConfiguredAgents.Count - 2)] -join ", "
+    $AgentsList = "$OtherAgents, and $LastAgent"
+}
+Write-Host "RTL support will now work in $AgentsList!" -ForegroundColor Green
 Write-Host ""
 
 # Ask if user wants to open VS Code now
