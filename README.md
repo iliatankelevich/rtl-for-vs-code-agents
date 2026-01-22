@@ -1,7 +1,7 @@
 # RTL for VS Code Agents
 
 ## Version
-3.0.4
+3.0.5
 
 Right-to-Left (RTL) support for AI chat agents in Visual Studio Code.
 
@@ -68,6 +68,8 @@ The installer will:
 - Optionally inject RTL support into Claude Code (with automatic backup)
 - Optionally inject RTL support into Google Antigravity (with automatic backup)
 - Restart VS Code when complete
+
+![Installaion script run - screenshot](image.png)
 
 **That's it!** RTL support will be active in all AI chat agents.
 
@@ -469,6 +471,9 @@ If RTL support suddenly stops working after updating VS Code, Claude Code, or An
 4. Run "Reload Custom CSS and JS"
 
 ## Changelog
+
+### v3.0.5
+- Add installation script screenshot to README documentation
 
 ### v3.0.4
 - Improve install.ps1 to show dynamic success message based on configured agents
