@@ -9,30 +9,54 @@ Write-Host ""
 $RestoredCount = 0
 $ErrorCount = 0
 
-# 1. Restore Claude Code
-Write-Host "Step 1: Restoring Claude Code..." -ForegroundColor Yellow
-$ExtensionsPath = "$env:USERPROFILE\.vscode\extensions"
-$ClaudeExtension = Get-ChildItem -Path $ExtensionsPath -Filter "anthropic.claude-code-*" -Directory | Select-Object -First 1
+# Helper function to restore Claude Code backup
+function Restore-ClaudeCodeBackup {
+    param($ExtensionPath, $Location)
 
-if ($ClaudeExtension) {
-    $WebviewPath = Join-Path $ClaudeExtension.FullName "webview"
-    $IndexJs = Join-Path $WebviewPath "index.js"
+    $IndexJs = Join-Path $ExtensionPath "webview\index.js"
     $BackupPath = "$IndexJs.backup"
 
     if (Test-Path $BackupPath) {
         try {
             Remove-Item $IndexJs -Force
             Move-Item $BackupPath $IndexJs
-            Write-Host "   OK Restored index.js from backup" -ForegroundColor Green
-            $RestoredCount++
+            Write-Host "   OK Restored index.js from backup ($Location)" -ForegroundColor Green
+            return $true
         } catch {
-            Write-Host "   X Error restoring index.js: $_" -ForegroundColor Red
-            $ErrorCount++
+            Write-Host "   X Error restoring index.js ($Location): $_" -ForegroundColor Red
+            return $false
         }
     } else {
-        Write-Host "   - No backup found (index.js.backup)" -ForegroundColor Gray
+        Write-Host "   - No backup found ($Location)" -ForegroundColor Gray
+        return $null
     }
-} else {
+}
+
+# 1. Restore Claude Code
+Write-Host "Step 1: Restoring Claude Code..." -ForegroundColor Yellow
+
+# Check VS Code
+$VSCodeExtPath = "$env:USERPROFILE\.vscode\extensions"
+$ClaudeVSCode = Get-ChildItem -Path $VSCodeExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+
+if ($ClaudeVSCode) {
+    $result = Restore-ClaudeCodeBackup -ExtensionPath $ClaudeVSCode.FullName -Location "VS Code"
+    if ($result -eq $true) { $RestoredCount++ }
+    elseif ($result -eq $false) { $ErrorCount++ }
+}
+
+# Check Antigravity
+$AntigravityExtPath = "$env:USERPROFILE\.antigravity\extensions"
+if (Test-Path $AntigravityExtPath) {
+    $ClaudeAntigravity = Get-ChildItem -Path $AntigravityExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($ClaudeAntigravity) {
+        $result = Restore-ClaudeCodeBackup -ExtensionPath $ClaudeAntigravity.FullName -Location "Antigravity"
+        if ($result -eq $true) { $RestoredCount++ }
+        elseif ($result -eq $false) { $ErrorCount++ }
+    }
+}
+
+if (-not $ClaudeVSCode -and -not $ClaudeAntigravity) {
     Write-Host "   - Claude Code extension not found" -ForegroundColor Gray
 }
 

@@ -61,9 +61,12 @@ If RTL stops working after updating VS Code or Claude Code:
 
 ## Changelog
 
-### v3.0.6
+### v4.0.0
+- Add Claude Code injection for Antigravity
+- Fix streaming messages RTL detection
 - Update selectors for Claude Code 2.1.19
 - Remove redundant script files
+- Simplify codebase and README
 
 ### v3.0.5
 - Add installation script screenshot to README
