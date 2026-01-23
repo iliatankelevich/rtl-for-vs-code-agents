@@ -38,7 +38,7 @@ if ($ClaudeExtension) {
             }
 
             # Inject
-            $RtlScript = Get-Content (Join-Path $ScriptDir "claude-code-rtl-simple.js") -Raw
+            $RtlScript = Get-Content (Join-Path $ScriptDir "rtl-for-vs-code-agents.js") -Raw
             Add-Content -Path $IndexJs -Value "`n$RtlScript"
             Write-Host "   RTL script injected successfully!" -ForegroundColor Green
             $ConfiguredAgents += "Claude Code"
@@ -79,8 +79,8 @@ if (Test-Path $AntigravityPath) {
             # Read the JS file
             $JsContent = Get-Content $ChatJsPath -Raw
 
-            # Read RTL script (use the simple version for direct injection)
-            $RtlScript = Get-Content (Join-Path $ScriptDir "rtl-antigravity-simple.js") -Raw
+            # Read RTL script
+            $RtlScript = Get-Content (Join-Path $ScriptDir "rtl-for-vs-code-agents.js") -Raw
 
             # Check if already injected
             if ($JsContent -match "RTL Support for Google Antigravity") {
