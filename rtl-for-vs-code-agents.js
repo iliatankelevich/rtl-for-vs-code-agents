@@ -31,8 +31,8 @@
             '.chat-markdown-part.rendered-markdown',
             '.chat-markdown-part',
             '.rendered-markdown',
-            '.V.D', // Claude Code user messages
-            '.V.o', // Claude Code assistant messages
+            '.P.X', // Claude Code user messages
+            '.P.e', // Claude Code assistant messages
             '._r',  // Claude Code RTL content container
             '.d.undefined',   // Claude Code buttons with RTL content
         ],
@@ -394,10 +394,14 @@
         // Process existing elements
         processElements();
 
-        // Watch for new elements and process them immediately
+        // Watch for new elements and streaming content
         const observer = new MutationObserver((mutations) => {
+            let hasNewNodes = false;
+            let hasTextChanges = false;
+
             mutations.forEach((mutation) => {
                 if (mutation.addedNodes.length > 0) {
+                    hasNewNodes = true;
                     mutation.addedNodes.forEach((node) => {
                         if (node.nodeType === 1) { // Element node
                             // Immediately handle code blocks
@@ -433,7 +437,7 @@
                                 chatElements.push(...childChatElements);
                             }
 
-                            // Process chat elements immediately - no debounce!
+                            // Process chat elements immediately
                             chatElements.forEach(element => {
                                 const wasRTL = element.getAttribute('data-rtl-applied') === 'true';
                                 const needsRTL = shouldBeRTL(element);
@@ -449,13 +453,24 @@
                         }
                     });
                 }
+                if (mutation.type === 'characterData') {
+                    hasTextChanges = true;
+                }
             });
+
+            // For streaming content updates, debounce and reprocess all
+            if (hasTextChanges || hasNewNodes) {
+                clearTimeout(window._rtlProcessTimeout);
+                window._rtlProcessTimeout = setTimeout(() => {
+                    processElements();
+                }, 50);
+            }
         });
 
         observer.observe(document.body, {
             childList: true,
             subtree: true,
-            characterData: false // Not needed - childList catches everything
+            characterData: true // Needed for streaming messages
         });
 
         // Process input boxes periodically (they don't trigger addedNodes)
