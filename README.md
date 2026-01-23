@@ -8,7 +8,7 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 - Automatic RTL detection for Hebrew, Arabic, Persian, Urdu, and more
 - Code blocks remain LTR
-- Works with GitHub Copilot Chat, Claude Code, and Google Antigravity
+- Works with GitHub Copilot Chat, Claude Code (VS Code + Antigravity), and Google Antigravity
 - Input box RTL support
 
 ## Preview
@@ -32,7 +32,8 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 The installer handles everything automatically:
 - Installs the Custom CSS and JS Loader extension
 - Configures VS Code settings
-- Injects RTL support into Claude Code and Antigravity (with backup)
+- Injects RTL support into Claude Code (both VS Code and Antigravity)
+- Injects RTL support into Antigravity's built-in chat
 
 ![Installation script](image.png)
 
