@@ -12,38 +12,69 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Track which agents were configured
 $ConfiguredAgents = @()
 
-# 1. Find Claude Code extension folder
+# Helper function to inject RTL into Claude Code
+function Inject-ClaudeCodeRTL {
+    param($IndexJs, $Location)
+
+    if (Test-Path $IndexJs) {
+        # Backup
+        $BackupPath = "$IndexJs.backup"
+        if (-not (Test-Path $BackupPath)) {
+            Copy-Item $IndexJs $BackupPath
+            Write-Host "   Backup created: index.js.backup" -ForegroundColor Green
+        } else {
+            Write-Host "   Backup already exists" -ForegroundColor Yellow
+        }
+
+        # Inject
+        $RtlScript = Get-Content (Join-Path $ScriptDir "rtl-for-vs-code-agents.js") -Raw
+        Add-Content -Path $IndexJs -Value "`n$RtlScript"
+        Write-Host "   RTL script injected successfully!" -ForegroundColor Green
+        return $true
+    } else {
+        Write-Host "   Error: index.js not found in webview folder" -ForegroundColor Red
+        return $false
+    }
+}
+
+# 1. Find Claude Code extension in VS Code
 Write-Host "Step 1: Locating Claude Code extension..." -ForegroundColor Yellow
-$ExtensionsPath = "$env:USERPROFILE\.vscode\extensions"
-$ClaudeExtension = Get-ChildItem -Path $ExtensionsPath -Filter "anthropic.claude-code-*" -Directory | Select-Object -First 1
 
-if ($ClaudeExtension) {
-    $WebviewPath = Join-Path $ClaudeExtension.FullName "webview"
-    $IndexJs = Join-Path $WebviewPath "index.js"
+# Check VS Code extensions
+$VSCodeExtPath = "$env:USERPROFILE\.vscode\extensions"
+$ClaudeVSCode = Get-ChildItem -Path $VSCodeExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
 
-    Write-Host "   Found: $($ClaudeExtension.Name)" -ForegroundColor Green
+# Check Antigravity extensions
+$AntigravityExtPath = "$env:USERPROFILE\.antigravity\extensions"
+$ClaudeAntigravity = $null
+if (Test-Path $AntigravityExtPath) {
+    $ClaudeAntigravity = Get-ChildItem -Path $AntigravityExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+}
 
-    # Ask user if they want to inject into Claude Code
+if ($ClaudeVSCode) {
+    Write-Host "   Found in VS Code: $($ClaudeVSCode.Name)" -ForegroundColor Green
+}
+if ($ClaudeAntigravity) {
+    Write-Host "   Found in Antigravity: $($ClaudeAntigravity.Name)" -ForegroundColor Green
+}
+
+if ($ClaudeVSCode -or $ClaudeAntigravity) {
     $InjectClaude = Read-Host "`nDo you want to inject RTL support into Claude Code? (y/n)"
 
     if ($InjectClaude -eq 'y' -or $InjectClaude -eq 'Y') {
-        if (Test-Path $IndexJs) {
-            # Backup
-            $BackupPath = "$IndexJs.backup"
-            if (-not (Test-Path $BackupPath)) {
-                Copy-Item $IndexJs $BackupPath
-                Write-Host "   Backup created: index.js.backup" -ForegroundColor Green
-            } else {
-                Write-Host "   Backup already exists" -ForegroundColor Yellow
+        if ($ClaudeVSCode) {
+            $IndexJs = Join-Path $ClaudeVSCode.FullName "webview\index.js"
+            Write-Host "   Injecting into VS Code..." -ForegroundColor Cyan
+            if (Inject-ClaudeCodeRTL -IndexJs $IndexJs -Location "VS Code") {
+                $ConfiguredAgents += "Claude Code (VS Code)"
             }
-
-            # Inject
-            $RtlScript = Get-Content (Join-Path $ScriptDir "rtl-for-vs-code-agents.js") -Raw
-            Add-Content -Path $IndexJs -Value "`n$RtlScript"
-            Write-Host "   RTL script injected successfully!" -ForegroundColor Green
-            $ConfiguredAgents += "Claude Code"
-        } else {
-            Write-Host "   Error: index.js not found in webview folder" -ForegroundColor Red
+        }
+        if ($ClaudeAntigravity) {
+            $IndexJs = Join-Path $ClaudeAntigravity.FullName "webview\index.js"
+            Write-Host "   Injecting into Antigravity..." -ForegroundColor Cyan
+            if (Inject-ClaudeCodeRTL -IndexJs $IndexJs -Location "Antigravity") {
+                $ConfiguredAgents += "Claude Code (Antigravity)"
+            }
         }
     }
 } else {
