@@ -28,6 +28,7 @@
 
         // Selectors for chat content (add more as needed for different agents)
         chatSelectors: [
+            // Copilot/Claude
             '.chat-markdown-part.rendered-markdown',
             '.chat-markdown-part',
             '.rendered-markdown',
@@ -35,6 +36,9 @@
             '.P.e', // Claude Code assistant messages
             '._r',  // Claude Code RTL content container
             '.d.undefined',   // Claude Code buttons with RTL content
+            // Antigravity (Google)
+            '.whitespace-pre-wrap', // User messages
+            'div.prose.prose-sm'    // Agent messages
         ],
 
         // Selectors for input boxes
@@ -356,13 +360,52 @@
     }
 
     /**
-     * Process all chat elements
+     * Process all chat elements (including Antigravity)
      */
     function processElements() {
         const selector = CONFIG.chatSelectors.join(', ');
         const elements = document.querySelectorAll(selector);
 
         elements.forEach(element => {
+            // Antigravity user message
+            if (element.classList && element.classList.contains('whitespace-pre-wrap')) {
+                // Simple RTL detection for user messages
+                const text = element.textContent || '';
+                if (containsRTL(text)) {
+                    element.style.direction = 'rtl';
+                    element.style.textAlign = 'right';
+                    element.setAttribute('data-rtl-applied', 'true');
+                } else if (element.getAttribute('data-rtl-applied') === 'true') {
+                    element.style.direction = '';
+                    element.style.textAlign = '';
+                    element.removeAttribute('data-rtl-applied');
+                }
+                return;
+            }
+            // Antigravity agent message
+            if (element.classList && element.classList.contains('prose') && element.classList.contains('prose-sm')) {
+                // Only process if not already processed
+                if (!element.hasAttribute('data-rtl-container-processed')) {
+                    const firstText = (element.textContent || '').trim().substring(0, 100);
+                    if (containsRTL(firstText)) {
+                        element.setAttribute('data-rtl-container-processed', 'true');
+                        // Apply RTL to all text elements inside (p, h1-h6, li)
+                        element.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li').forEach(el => {
+                            el.style.direction = 'rtl';
+                            el.style.textAlign = 'right';
+                            el.setAttribute('data-rtl-applied', 'true');
+                        });
+                        // Also handle lists (ol, ul)
+                        element.querySelectorAll('ol, ul').forEach(list => {
+                            list.style.direction = 'rtl';
+                            list.style.textAlign = 'right';
+                            list.setAttribute('data-rtl-applied', 'true');
+                        });
+                    }
+                }
+                return;
+            }
+            // Default logic for Copilot/Claude
             const wasRTL = element.getAttribute('data-rtl-applied') === 'true';
             const needsRTL = shouldBeRTL(element);
 
