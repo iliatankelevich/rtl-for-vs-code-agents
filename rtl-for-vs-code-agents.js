@@ -405,6 +405,7 @@
                 }
                 return;
             }
+
             // Default logic for Copilot/Claude
             const wasRTL = element.getAttribute('data-rtl-applied') === 'true';
             const needsRTL = shouldBeRTL(element);

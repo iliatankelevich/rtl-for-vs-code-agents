@@ -35,28 +35,35 @@ function Restore-ClaudeCodeBackup {
 # 1. Restore Claude Code
 Write-Host "Step 1: Restoring Claude Code..." -ForegroundColor Yellow
 
-# Check VS Code
+# Check VS Code - Find ALL versions
 $VSCodeExtPath = "$env:USERPROFILE\.vscode\extensions"
-$ClaudeVSCode = Get-ChildItem -Path $VSCodeExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+$ClaudeVSCodeList = Get-ChildItem -Path $VSCodeExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue
 
-if ($ClaudeVSCode) {
-    $result = Restore-ClaudeCodeBackup -ExtensionPath $ClaudeVSCode.FullName -Location "VS Code"
-    if ($result -eq $true) { $RestoredCount++ }
-    elseif ($result -eq $false) { $ErrorCount++ }
-}
-
-# Check Antigravity
-$AntigravityExtPath = "$env:USERPROFILE\.antigravity\extensions"
-if (Test-Path $AntigravityExtPath) {
-    $ClaudeAntigravity = Get-ChildItem -Path $AntigravityExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($ClaudeAntigravity) {
-        $result = Restore-ClaudeCodeBackup -ExtensionPath $ClaudeAntigravity.FullName -Location "Antigravity"
+if ($ClaudeVSCodeList.Count -gt 0) {
+    foreach ($ext in $ClaudeVSCodeList) {
+        Write-Host "   Processing VS Code ($($ext.Name))..." -ForegroundColor Cyan
+        $result = Restore-ClaudeCodeBackup -ExtensionPath $ext.FullName -Location "VS Code"
         if ($result -eq $true) { $RestoredCount++ }
         elseif ($result -eq $false) { $ErrorCount++ }
     }
 }
 
-if (-not $ClaudeVSCode -and -not $ClaudeAntigravity) {
+# Check Antigravity - Find ALL versions
+$AntigravityExtPath = "$env:USERPROFILE\.antigravity\extensions"
+if (Test-Path $AntigravityExtPath) {
+    $ClaudeAntigravityList = Get-ChildItem -Path $AntigravityExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue
+    
+    if ($ClaudeAntigravityList.Count -gt 0) {
+        foreach ($ext in $ClaudeAntigravityList) {
+            Write-Host "   Processing Antigravity ($($ext.Name))..." -ForegroundColor Cyan
+            $result = Restore-ClaudeCodeBackup -ExtensionPath $ext.FullName -Location "Antigravity"
+            if ($result -eq $true) { $RestoredCount++ }
+            elseif ($result -eq $false) { $ErrorCount++ }
+        }
+    }
+}
+
+if ($ClaudeVSCodeList.Count -eq 0 -and (-not (Test-Path $AntigravityExtPath) -or $ClaudeAntigravityList.Count -eq 0)) {
     Write-Host "   - Claude Code extension not found" -ForegroundColor Gray
 }
 

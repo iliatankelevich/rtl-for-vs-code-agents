@@ -24,34 +24,51 @@ SETTINGS_FILE="$VSCODE_DIR/User/settings.json"
 
 # 1. Find Claude Code extension folder
 echo "Step 1: Locating Claude Code extension..."
-CLAUDE_EXTENSION=$(find "$EXTENSIONS_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*" | head -n 1)
+# Find all versions
+CLAUDE_EXTENSIONS=$(find "$EXTENSIONS_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*")
 
-if [ -n "$CLAUDE_EXTENSION" ]; then
-    WEBVIEW_PATH="$CLAUDE_EXTENSION/webview"
-    INDEX_JS="$WEBVIEW_PATH/index.js"
-
-    echo "   Found: $(basename "$CLAUDE_EXTENSION")"
+if [ -n "$CLAUDE_EXTENSIONS" ]; then
+    echo "Found Claude Code versions:"
+    echo "$CLAUDE_EXTENSIONS" | while read -r match; do
+        echo "   - $(basename "$match")"
+    done
 
     # Ask user if they want to inject into Claude Code
-    read -p $'\nDo you want to inject RTL support into Claude Code? (y/n): ' INJECT_CLAUDE
+    read -p $'\nDo you want to inject RTL support into ALL found Claude Code versions? (y/n): ' INJECT_CLAUDE
 
     if [[ "$INJECT_CLAUDE" =~ ^[Yy]$ ]]; then
-        if [ -f "$INDEX_JS" ]; then
-            # Backup
-            BACKUP_PATH="$INDEX_JS.backup"
-            if [ ! -f "$BACKUP_PATH" ]; then
-                cp "$INDEX_JS" "$BACKUP_PATH"
-                echo "   Backup created: index.js.backup"
-            else
-                echo "   Backup already exists"
-            fi
+        echo "$CLAUDE_EXTENSIONS" | while read -r CLAUDE_EXTENSION; do
+            WEBVIEW_PATH="$CLAUDE_EXTENSION/webview"
+            INDEX_JS="$WEBVIEW_PATH/index.js"
+            
+            echo "   Processing: $(basename "$CLAUDE_EXTENSION")"
 
-            # Inject
-            cat "$SCRIPT_DIR/claude-code-rtl-simple.js" >> "$INDEX_JS"
-            echo "   RTL script injected successfully!"
-        else
-            echo "   Error: index.js not found in webview folder"
-        fi
+            if [ -f "$INDEX_JS" ]; then
+                # Backup
+                BACKUP_PATH="$INDEX_JS.backup"
+                if [ ! -f "$BACKUP_PATH" ]; then
+                    cp "$INDEX_JS" "$BACKUP_PATH"
+                    echo "      Backup created: index.js.backup"
+                else
+                    echo "      Backup already exists"
+                fi
+
+                # Inject - Use main script content instead of simple script
+                # Read the main script content, escape backslashes and special characters for sed
+                # Note: This is complex in shell, simpler to concatenate
+                
+                # Check if already injected
+                if grep -q "RTL Support for VS Code AI Chat Agents" "$INDEX_JS"; then
+                    echo "      RTL script already injected!"
+                else
+                    echo "" >> "$INDEX_JS"
+                    cat "$SCRIPT_DIR/rtl-for-vs-code-agents.js" >> "$INDEX_JS"
+                    echo "      RTL script injected successfully!"
+                fi
+            else
+                echo "      Error: index.js not found in webview folder"
+            fi
+        done
     fi
 else
     echo "   Claude Code extension not found"

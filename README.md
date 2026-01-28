@@ -62,6 +62,12 @@ If RTL stops working after updating VS Code or Claude Code:
 
 ## Changelog
 
+### v4.2.0
+- **Unified Script:** Merged Google Antigravity support directly into the main `rtl-for-vs-code-agents.js`. No separate injection files needed.
+- **Smarter Installer:** `install.ps1` and `install.sh` now detect and patch **all** installed versions of Claude Code (VS Code & Antigravity), ensuring RTL works even after extension updates or side-by-side installations.
+- **Enhanced Uninstaller:** `uninstall.ps1` cleans up all detected versions.
+- **Performance:** Removed unnecessary Shadow DOM traversals.
+
 ### v4.0.0
 - Add Claude Code injection for Antigravity
 - Fix streaming messages RTL detection

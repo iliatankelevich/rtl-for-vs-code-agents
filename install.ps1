@@ -42,38 +42,46 @@ Write-Host "Step 1: Locating Claude Code extension..." -ForegroundColor Yellow
 
 # Check VS Code extensions
 $VSCodeExtPath = "$env:USERPROFILE\.vscode\extensions"
-$ClaudeVSCode = Get-ChildItem -Path $VSCodeExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+$ClaudeVSCodeList = Get-ChildItem -Path $VSCodeExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue
 
 # Check Antigravity extensions
 $AntigravityExtPath = "$env:USERPROFILE\.antigravity\extensions"
-$ClaudeAntigravity = $null
+$ClaudeAntigravityList = @()
 if (Test-Path $AntigravityExtPath) {
-    $ClaudeAntigravity = Get-ChildItem -Path $AntigravityExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+    $ClaudeAntigravityList = Get-ChildItem -Path $AntigravityExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue
 }
 
-if ($ClaudeVSCode) {
-    Write-Host "   Found in VS Code: $($ClaudeVSCode.Name)" -ForegroundColor Green
+if ($ClaudeVSCodeList.Count -gt 0) {
+    foreach ($ext in $ClaudeVSCodeList) {
+        Write-Host "   Found in VS Code: $($ext.Name)" -ForegroundColor Green
+    }
 }
-if ($ClaudeAntigravity) {
-    Write-Host "   Found in Antigravity: $($ClaudeAntigravity.Name)" -ForegroundColor Green
+if ($ClaudeAntigravityList.Count -gt 0) {
+    foreach ($ext in $ClaudeAntigravityList) {
+        Write-Host "   Found in Antigravity: $($ext.Name)" -ForegroundColor Green
+    }
 }
 
-if ($ClaudeVSCode -or $ClaudeAntigravity) {
-    $InjectClaude = Read-Host "`nDo you want to inject RTL support into Claude Code? (y/n)"
+if ($ClaudeVSCodeList.Count -gt 0 -or $ClaudeAntigravityList.Count -gt 0) {
+    $InjectClaude = Read-Host "`nDo you want to inject RTL support into ALL found Claude Code versions? (y/n)"
 
     if ($InjectClaude -eq 'y' -or $InjectClaude -eq 'Y') {
-        if ($ClaudeVSCode) {
-            $IndexJs = Join-Path $ClaudeVSCode.FullName "webview\index.js"
-            Write-Host "   Injecting into VS Code..." -ForegroundColor Cyan
+        foreach ($ext in $ClaudeVSCodeList) {
+            $IndexJs = Join-Path $ext.FullName "webview\index.js"
+            Write-Host "   Injecting into VS Code ($($ext.Name))..." -ForegroundColor Cyan
             if (Inject-ClaudeCodeRTL -IndexJs $IndexJs -Location "VS Code") {
-                $ConfiguredAgents += "Claude Code (VS Code)"
+                if ($ConfiguredAgents -notcontains "Claude Code (VS Code)") {
+                    $ConfiguredAgents += "Claude Code (VS Code)"
+                }
             }
         }
-        if ($ClaudeAntigravity) {
-            $IndexJs = Join-Path $ClaudeAntigravity.FullName "webview\index.js"
-            Write-Host "   Injecting into Antigravity..." -ForegroundColor Cyan
+        foreach ($ext in $ClaudeAntigravityList) {
+            $IndexJs = Join-Path $ext.FullName "webview\index.js"
+            Write-Host "   Injecting into Antigravity ($($ext.Name))..." -ForegroundColor Cyan
             if (Inject-ClaudeCodeRTL -IndexJs $IndexJs -Location "Antigravity") {
-                $ConfiguredAgents += "Claude Code (Antigravity)"
+                if ($ConfiguredAgents -notcontains "Claude Code (Antigravity)") {
+                    $ConfiguredAgents += "Claude Code (Antigravity)"
+                }
             }
         }
     }
