@@ -32,8 +32,8 @@
             '.chat-markdown-part.rendered-markdown',
             '.chat-markdown-part',
             '.rendered-markdown',
-            '.P.X', // Claude Code user messages
-            '.P.e', // Claude Code assistant messages
+            '.U.N', // Claude Code user messages
+            '.U.e', // Claude Code assistant messages
             '._r',  // Claude Code RTL content container
             '.d.undefined',   // Claude Code buttons with RTL content
             // Antigravity (Google)

@@ -62,6 +62,11 @@ If RTL stops working after updating VS Code or Claude Code:
 
 ## Changelog
 
+### v4.2.1
+- **Antigravity Chat:** Fix streaming RTL for Antigravity's built-in chat
+- **Selectors:** Update Claude Code selectors (`.U.N`, `.U.e`)
+- **Selectors:** Add Antigravity chat selectors (`.whitespace-pre-wrap`, `div.prose.prose-sm`)
+
 ### v4.2.0
 - **Smarter Installer:** `install.ps1` and `install.sh` now detect and patch **all** installed versions of Claude Code (VS Code & Antigravity), ensuring RTL works even after extension updates or side-by-side installations.
 - **Enhanced Uninstaller:** `uninstall.ps1` cleans up all detected versions.
