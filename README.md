@@ -25,6 +25,8 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 3. Select the downloaded file
 4. Restart VS Code
 
+![Install from VSIX](InstallVSIX.png)
+
 That's it! The extension automatically injects RTL support into Claude Code - no additional setup needed.
 
 ### For GitHub Copilot Chat
