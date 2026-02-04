@@ -11,13 +11,18 @@ echo ""
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Track which agents were configured
+CONFIGURED_AGENTS=()
+
 # Detect OS
 if [[ "$OSTYPE" == "darwin"* ]]; then
     VSCODE_DIR="$HOME/Library/Application Support/Code"
     EXTENSIONS_DIR="$HOME/.vscode/extensions"
+    ANTIGRAVITY_EXT_DIR="$HOME/.antigravity/extensions"
 else
     VSCODE_DIR="$HOME/.config/Code"
     EXTENSIONS_DIR="$HOME/.vscode/extensions"
+    ANTIGRAVITY_EXT_DIR="$HOME/.antigravity/extensions"
 fi
 
 SETTINGS_FILE="$VSCODE_DIR/User/settings.json"
@@ -25,50 +30,91 @@ SETTINGS_FILE="$VSCODE_DIR/User/settings.json"
 # 1. Find Claude Code extension folder
 echo "Step 1: Locating Claude Code extension..."
 # Find all versions
-CLAUDE_EXTENSIONS=$(find "$EXTENSIONS_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*")
+CLAUDE_VSCODE_EXTENSIONS=$(find "$EXTENSIONS_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*" 2>/dev/null)
+CLAUDE_ANTIGRAVITY_EXTENSIONS=""
+if [ -d "$ANTIGRAVITY_EXT_DIR" ]; then
+    CLAUDE_ANTIGRAVITY_EXTENSIONS=$(find "$ANTIGRAVITY_EXT_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*" 2>/dev/null)
+fi
 
-if [ -n "$CLAUDE_EXTENSIONS" ]; then
-    echo "Found Claude Code versions:"
-    echo "$CLAUDE_EXTENSIONS" | while read -r match; do
+if [ -n "$CLAUDE_VSCODE_EXTENSIONS" ]; then
+    echo "   Found in VS Code:"
+    echo "$CLAUDE_VSCODE_EXTENSIONS" | while read -r match; do
         echo "   - $(basename "$match")"
     done
+fi
+if [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
+    echo "   Found in Antigravity:"
+    echo "$CLAUDE_ANTIGRAVITY_EXTENSIONS" | while read -r match; do
+        echo "   - $(basename "$match")"
+    done
+fi
 
+if [ -n "$CLAUDE_VSCODE_EXTENSIONS" ] || [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
     # Ask user if they want to inject into Claude Code
     read -p $'\nDo you want to inject RTL support into ALL found Claude Code versions? (y/n): ' INJECT_CLAUDE
 
     if [[ "$INJECT_CLAUDE" =~ ^[Yy]$ ]]; then
-        echo "$CLAUDE_EXTENSIONS" | while read -r CLAUDE_EXTENSION; do
-            WEBVIEW_PATH="$CLAUDE_EXTENSION/webview"
-            INDEX_JS="$WEBVIEW_PATH/index.js"
-            
-            echo "   Processing: $(basename "$CLAUDE_EXTENSION")"
+        if [ -n "$CLAUDE_VSCODE_EXTENSIONS" ]; then
+            while read -r CLAUDE_EXTENSION; do
+                [ -z "$CLAUDE_EXTENSION" ] && continue
+                WEBVIEW_PATH="$CLAUDE_EXTENSION/webview"
+                INDEX_JS="$WEBVIEW_PATH/index.js"
 
-            if [ -f "$INDEX_JS" ]; then
-                # Backup
-                BACKUP_PATH="$INDEX_JS.backup"
-                if [ ! -f "$BACKUP_PATH" ]; then
-                    cp "$INDEX_JS" "$BACKUP_PATH"
-                    echo "      Backup created: index.js.backup"
-                else
-                    echo "      Backup already exists"
-                fi
+                echo "   Injecting into VS Code ($(basename "$CLAUDE_EXTENSION"))..."
 
-                # Inject - Use main script content instead of simple script
-                # Read the main script content, escape backslashes and special characters for sed
-                # Note: This is complex in shell, simpler to concatenate
-                
-                # Check if already injected
-                if grep -q "RTL Support for VS Code AI Chat Agents" "$INDEX_JS"; then
-                    echo "      RTL script already injected!"
-                else
+                if [ -f "$INDEX_JS" ]; then
+                    # Backup
+                    BACKUP_PATH="$INDEX_JS.backup"
+                    if [ ! -f "$BACKUP_PATH" ]; then
+                        cp "$INDEX_JS" "$BACKUP_PATH"
+                        echo "      Backup created: index.js.backup"
+                    else
+                        echo "      Backup already exists"
+                    fi
+
                     echo "" >> "$INDEX_JS"
                     cat "$SCRIPT_DIR/rtl-for-vs-code-agents.js" >> "$INDEX_JS"
                     echo "      RTL script injected successfully!"
+
+                    if [[ ! " ${CONFIGURED_AGENTS[*]} " =~ " Claude Code (VS Code) " ]]; then
+                        CONFIGURED_AGENTS+=("Claude Code (VS Code)")
+                    fi
+                else
+                    echo "      Error: index.js not found in webview folder"
                 fi
-            else
-                echo "      Error: index.js not found in webview folder"
-            fi
-        done
+            done <<< "$CLAUDE_VSCODE_EXTENSIONS"
+        fi
+
+        if [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
+            while read -r CLAUDE_EXTENSION; do
+                [ -z "$CLAUDE_EXTENSION" ] && continue
+                WEBVIEW_PATH="$CLAUDE_EXTENSION/webview"
+                INDEX_JS="$WEBVIEW_PATH/index.js"
+
+                echo "   Injecting into Antigravity ($(basename "$CLAUDE_EXTENSION"))..."
+
+                if [ -f "$INDEX_JS" ]; then
+                    # Backup
+                    BACKUP_PATH="$INDEX_JS.backup"
+                    if [ ! -f "$BACKUP_PATH" ]; then
+                        cp "$INDEX_JS" "$BACKUP_PATH"
+                        echo "      Backup created: index.js.backup"
+                    else
+                        echo "      Backup already exists"
+                    fi
+
+                    echo "" >> "$INDEX_JS"
+                    cat "$SCRIPT_DIR/rtl-for-vs-code-agents.js" >> "$INDEX_JS"
+                    echo "      RTL script injected successfully!"
+
+                    if [[ ! " ${CONFIGURED_AGENTS[*]} " =~ " Claude Code (Antigravity) " ]]; then
+                        CONFIGURED_AGENTS+=("Claude Code (Antigravity)")
+                    fi
+                else
+                    echo "      Error: index.js not found in webview folder"
+                fi
+            done <<< "$CLAUDE_ANTIGRAVITY_EXTENSIONS"
+        fi
     fi
 else
     echo "   Claude Code extension not found"
@@ -77,8 +123,55 @@ fi
 
 echo ""
 
-# 2. Set up Custom CSS and JS Loader
-echo "Step 2: Configuring Custom CSS and JS Loader..."
+# 2. Find Google Antigravity (if installed)
+echo "Step 2: Locating Google Antigravity..."
+
+ANTIGRAVITY_CHAT_JS=""
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    ANTIGRAVITY_CHAT_JS="/Applications/Antigravity.app/Contents/Resources/app/extensions/antigravity/out/media/chat.js"
+else
+    # Common Linux locations (best-effort)
+    if [ -f "/opt/Antigravity/resources/app/extensions/antigravity/out/media/chat.js" ]; then
+        ANTIGRAVITY_CHAT_JS="/opt/Antigravity/resources/app/extensions/antigravity/out/media/chat.js"
+    elif [ -f "$HOME/.local/share/Antigravity/resources/app/extensions/antigravity/out/media/chat.js" ]; then
+        ANTIGRAVITY_CHAT_JS="$HOME/.local/share/Antigravity/resources/app/extensions/antigravity/out/media/chat.js"
+    fi
+fi
+
+if [ -n "$ANTIGRAVITY_CHAT_JS" ] && [ -f "$ANTIGRAVITY_CHAT_JS" ]; then
+    echo "   Found: Antigravity"
+    read -p $'\nDo you want to inject RTL support into Antigravity? (y/n): ' INJECT_ANTIGRAVITY
+
+    if [[ "$INJECT_ANTIGRAVITY" =~ ^[Yy]$ ]]; then
+        # Backup
+        BACKUP_PATH="$ANTIGRAVITY_CHAT_JS.backup"
+        if [ ! -f "$BACKUP_PATH" ]; then
+            cp "$ANTIGRAVITY_CHAT_JS" "$BACKUP_PATH"
+            echo "   Backup created: chat.js.backup"
+        else
+            echo "   Backup already exists"
+        fi
+
+        # Check if already injected
+        if grep -q "RTL Support for Google Antigravity" "$ANTIGRAVITY_CHAT_JS"; then
+            echo "   RTL script already injected!"
+        else
+            echo "" >> "$ANTIGRAVITY_CHAT_JS"
+            echo "// RTL Support for Google Antigravity" >> "$ANTIGRAVITY_CHAT_JS"
+            cat "$SCRIPT_DIR/rtl-for-vs-code-agents.js" >> "$ANTIGRAVITY_CHAT_JS"
+            echo "   RTL script injected successfully!"
+            CONFIGURED_AGENTS+=("Antigravity")
+        fi
+    fi
+else
+    echo "   Google Antigravity not found"
+    echo "   Skipping Antigravity injection"
+fi
+
+echo ""
+
+# 3. Set up Custom CSS and JS Loader
+echo "Step 3: Configuring Custom CSS and JS Loader..."
 echo "   Settings file: $SETTINGS_FILE"
 
 # Ask user where to save the main script
@@ -102,32 +195,33 @@ DEST_SCRIPT="$CUSTOM_PATH/rtl-for-vscode-agents.js"
 cp "$SCRIPT_DIR/rtl-for-vs-code-agents.js" "$DEST_SCRIPT"
 echo "   Copied rtl-for-vscode-agents.js"
 
-# Update settings.json
-if [ -f "$SETTINGS_FILE" ]; then
-    # Convert path to file:/// format
-    FILE_URL="file://$DEST_SCRIPT"
+CONFIGURED_AGENTS+=("Copilot")
 
-    # Check if jq is available for JSON manipulation
-    if command -v jq &> /dev/null; then
-        # Use jq to safely update JSON
-        TMP_FILE=$(mktemp)
-        if jq --arg url "$FILE_URL" '. + {"vscode_custom_css.imports": [.["vscode_custom_css.imports"][]?, $url] | unique}' "$SETTINGS_FILE" > "$TMP_FILE"; then
-            mv "$TMP_FILE" "$SETTINGS_FILE"
-            echo "   Settings updated successfully!"
-        else
-            rm "$TMP_FILE"
-            echo "   Error updating settings. Please add manually:"
-            echo "   \"vscode_custom_css.imports\": [\"$FILE_URL\"]"
-        fi
+# Update settings.json
+# Convert path to file:/// format
+FILE_URL="file:///$DEST_SCRIPT"
+
+if [ -f "$SETTINGS_FILE" ]; then
+    RAW_CONTENT="$(cat "$SETTINGS_FILE")"
+
+    if echo "$RAW_CONTENT" | grep -Fq "$FILE_URL"; then
+        echo "   Script already in settings.json"
+    elif echo "$RAW_CONTENT" | grep -Eq '"vscode_custom_css\.imports"'; then
+        UPDATED_CONTENT=$(printf "%s" "$RAW_CONTENT" | perl -0777 -pe 's/("vscode_custom_css\.imports"\s*:\s*\[)/$1\n        "'"$FILE_URL"'",/s')
+        printf "%s" "$UPDATED_CONTENT" > "$SETTINGS_FILE"
+        echo "   Updated vscode_custom_css.imports"
     else
-        # Manual instruction if jq is not available
-        echo "   Please add the following to your settings.json manually:"
-        echo "   \"vscode_custom_css.imports\": [\"$FILE_URL\"]"
+        NEW_PROPERTY="\"vscode_custom_css.imports\": [\"$FILE_URL\"],"
+        UPDATED_CONTENT=$(printf "%s" "$RAW_CONTENT" | perl -0777 -pe 's/^\s*\{/{\n    '"$NEW_PROPERTY"'/s')
+        printf "%s" "$UPDATED_CONTENT" > "$SETTINGS_FILE"
+        echo "   Added vscode_custom_css.imports to settings"
     fi
+
+    echo "   Settings updated successfully!"
 else
     echo "   Error: settings.json not found at $SETTINGS_FILE"
-    echo "   Please create it and add:"
-    echo "   \"vscode_custom_css.imports\": [\"file://$DEST_SCRIPT\"]"
+    echo "   Please add manually:"
+    echo "   \"vscode_custom_css.imports\": [\"$FILE_URL\"]"
 fi
 
 echo ""
@@ -140,7 +234,23 @@ echo "1. Install 'Custom CSS and JS Loader' extension if you haven't already"
 echo "2. Press Cmd+Shift+P (Mac) or Ctrl+Shift+P (Linux) and run 'Enable Custom CSS and JS'"
 echo "3. Restart VS Code"
 echo ""
-echo "RTL support will now work in Copilot and Claude Code!"
+if [ ${#CONFIGURED_AGENTS[@]} -eq 1 ]; then
+    AGENTS_LIST="${CONFIGURED_AGENTS[0]}"
+elif [ ${#CONFIGURED_AGENTS[@]} -eq 2 ]; then
+    AGENTS_LIST="${CONFIGURED_AGENTS[0]} and ${CONFIGURED_AGENTS[1]}"
+else
+    LAST_INDEX=$((${#CONFIGURED_AGENTS[@]} - 1))
+    LAST_AGENT="${CONFIGURED_AGENTS[$LAST_INDEX]}"
+    OTHER_AGENTS=()
+    for ((i=0; i<LAST_INDEX; i++)); do
+        OTHER_AGENTS+=("${CONFIGURED_AGENTS[$i]}")
+    done
+    AGENTS_LIST="$(printf "%s, " "${OTHER_AGENTS[@]}")"
+    AGENTS_LIST="${AGENTS_LIST%, }"
+    AGENTS_LIST="$AGENTS_LIST, and $LAST_AGENT"
+fi
+
+echo "RTL support will now work in $AGENTS_LIST!"
 echo ""
 
 # Ask if user wants to restart VS Code

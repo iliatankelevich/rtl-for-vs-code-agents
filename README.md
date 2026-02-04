@@ -17,6 +17,25 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 ## Installation
 
+### VS Code Extension (Recommended)
+
+This repository now includes a standard VS Code extension that:
+
+- Automatically checks for new Claude Code versions
+- Injects RTL support into any new Claude Code install
+- Optionally configures Custom CSS and JS Loader for Copilot/other agents
+
+After installing the extension, you can also run:
+
+- **RTL for VS Code Agents: Check and Inject Claude Code**
+- **RTL for VS Code Agents: Configure Custom CSS Loader**
+
+Settings:
+
+- `rtlForVsCodeAgents.autoInject` (default: true)
+- `rtlForVsCodeAgents.checkIntervalHours` (default: 24)
+- `rtlForVsCodeAgents.autoConfigureCustomCss` (default: false)
+
 ### Windows
 
 ```powershell
@@ -43,13 +62,17 @@ The installer handles everything automatically:
 .\uninstall.ps1
 ```
 
+```bash
+./uninstall.sh
+```
+
 Restores all original files from backups.
 
 ## After Updates
 
 If RTL stops working after updating VS Code or Claude Code:
 
-1. Re-run `install.ps1` to re-inject the scripts
+1. Re-run `install.ps1` or `install.sh` to re-inject the scripts
 2. If that doesn't help, the CSS selectors may have changed - please open an issue
 
 ## Troubleshooting
@@ -58,9 +81,15 @@ If RTL stops working after updating VS Code or Claude Code:
 |---------|----------|
 | "[Unsupported]" in title bar | Normal - this is expected |
 | RTL not applied | Run `Reload Custom CSS and JS` command, then restart VS Code |
-| RTL stopped after update | Re-run `install.ps1` |
+| RTL stopped after update | Re-run `install.ps1` or `install.sh` |
 
 ## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for full history.
+
+### v4.3.1
+- **Scripts:** `install.sh` aligned with Windows behavior (Claude + Antigravity detection)
+- **Uninstaller:** Added `uninstall.sh` for Mac/Linux
 
 ### v4.2.1
 - **Antigravity Chat:** Fix streaming RTL for Antigravity's built-in chat

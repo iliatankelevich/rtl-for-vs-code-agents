@@ -1,0 +1,51 @@
+{
+  "name": "rtl-for-vs-code-agents",
+  "displayName": "RTL for VS Code Agents",
+  "description": "Right-to-left (RTL) support for AI chat agents, with automatic Claude Code injection.",
+  "version": "4.3.1",
+  "publisher": "local",
+  "license": "GPL-3.0",
+  "icon": "image.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:rtlForVsCodeAgents.checkAndInject",
+    "onCommand:rtlForVsCodeAgents.configureCustomCss"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "rtlForVsCodeAgents.checkAndInject",
+        "title": "RTL for VS Code Agents: Check and Inject Claude Code"
+      },
+      {
+        "command": "rtlForVsCodeAgents.configureCustomCss",
+        "title": "RTL for VS Code Agents: Configure Custom CSS Loader"
+      }
+    ],
+    "configuration": {
+      "title": "RTL for VS Code Agents",
+      "properties": {
+        "rtlForVsCodeAgents.autoInject": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically check for new Claude Code versions and inject RTL support."
+        },
+        "rtlForVsCodeAgents.checkIntervalHours": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "How often to check for new Claude Code versions (in hours). 0 disables periodic checks (startup only)."
+        },
+        "rtlForVsCodeAgents.autoConfigureCustomCss": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically configure Custom CSS and JS Loader to load the RTL script."
+        }
+      }
+    }
+  }
+}
