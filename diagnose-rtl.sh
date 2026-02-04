@@ -11,7 +11,17 @@ echo "=== SUMMARY ==="
 
 VSCODE_EXT_DIR="$HOME/.vscode/extensions"
 ANTIGRAVITY_EXT_DIR="$HOME/.antigravity/extensions"
-VSCODE_SETTINGS="$HOME/Library/Application Support/Code/User/settings.json"
+VSCODE_SETTINGS_CANDIDATES=(
+    "$HOME/Library/Application Support/Code/User/settings.json"
+    "$HOME/Library/Application Support/Code - Insiders/User/settings.json"
+)
+
+SETTINGS_FOUND=()
+for s in "${VSCODE_SETTINGS_CANDIDATES[@]}"; do
+    if [ -f "$s" ]; then
+        SETTINGS_FOUND+=("$s")
+    fi
+done
 
 CLAUDE_VSCODE=$(find "$VSCODE_EXT_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*" 2>/dev/null)
 CLAUDE_ANTI=""
@@ -24,7 +34,7 @@ ANTI_CHAT_JS="/Applications/Antigravity.app/Contents/Resources/app/extensions/an
 echo "Claude VS Code versions found: $(echo "$CLAUDE_VSCODE" | sed '/^$/d' | wc -l | tr -d ' ')"
 echo "Claude Antigravity versions found: $(echo "$CLAUDE_ANTI" | sed '/^$/d' | wc -l | tr -d ' ')"
 echo "Antigravity chat.js exists: $( [ -f "$ANTI_CHAT_JS" ] && echo true || echo false )"
-echo "Settings exists: $( [ -f "$VSCODE_SETTINGS" ] && echo true || echo false )"
+echo "Settings files found: ${#SETTINGS_FOUND[@]}"
 echo ""
 
 echo "=== DETAILS ==="
@@ -82,16 +92,25 @@ echo "   backup exists:   $( [ -f "$ANTI_CHAT_JS.backup" ] && echo true || echo 
 echo "   injected marker: $chat_injected"
 
 echo "\n-- settings.json --"
-settings_has_imports=false
-settings_contains_rtl=false
-if [ -f "$VSCODE_SETTINGS" ]; then
-    if grep -q '"vscode_custom_css\.imports"' "$VSCODE_SETTINGS"; then settings_has_imports=true; fi
-    if grep -q "rtl-for-vscode-agents\.js" "$VSCODE_SETTINGS"; then settings_contains_rtl=true; fi
+if [ ${#SETTINGS_FOUND[@]} -eq 0 ]; then
+    echo "   None found"
+    echo "   Expected paths:"
+    for s in "${VSCODE_SETTINGS_CANDIDATES[@]}"; do
+        echo "   - $s"
+    done
+else
+    for s in "${SETTINGS_FOUND[@]}"; do
+        settings_has_imports=false
+        settings_contains_rtl=false
+        if grep -q '"vscode_custom_css\.imports"' "$s"; then settings_has_imports=true; fi
+        if grep -q "rtl-for-vscode-agents\.js" "$s"; then settings_contains_rtl=true; fi
+        echo "   Path: $s"
+        echo "   exists:              true"
+        echo "   has custom imports:  $settings_has_imports"
+        echo "   contains RTL script: $settings_contains_rtl"
+        echo ""
+    done
 fi
-echo "   Path: $VSCODE_SETTINGS"
-echo "   exists:              $( [ -f "$VSCODE_SETTINGS" ] && echo true || echo false )"
-echo "   has custom imports:  $settings_has_imports"
-echo "   contains RTL script: $settings_contains_rtl"
 
 echo "\n-- RTL script files --"
 found_any=false

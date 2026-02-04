@@ -92,21 +92,28 @@ $Report["antigravityChat"] = [ordered]@{
     chatJsPath = $chatJs
 }
 
-# settings.json
-$settingsPath = "$env:APPDATA\Code\User\settings.json"
-$settingsHasImport = $false
-$settingsImports = @()
-if (Test-Path $settingsPath) {
-    $raw = Get-Content $settingsPath -Raw -ErrorAction SilentlyContinue
-    if ($raw -match '"vscode_custom_css\.imports"') { $settingsHasImport = $true }
-    if ($raw -match "rtl-for-vscode-agents\.js") { $settingsImports += "rtl-for-vscode-agents.js" }
+# settings.json (VS Code + Insiders)
+$settingsPaths = @(
+    "$env:APPDATA\Code\User\settings.json",
+    "$env:APPDATA\Code - Insiders\User\settings.json"
+)
+$settingsReports = @()
+foreach ($settingsPath in $settingsPaths) {
+    $settingsHasImport = $false
+    $settingsContainsRtl = $false
+    if (Test-Path $settingsPath) {
+        $raw = Get-Content $settingsPath -Raw -ErrorAction SilentlyContinue
+        if ($raw -match '"vscode_custom_css\.imports"') { $settingsHasImport = $true }
+        if ($raw -match "rtl-for-vscode-agents\.js") { $settingsContainsRtl = $true }
+    }
+    $settingsReports += [ordered]@{
+        settingsPath = $settingsPath
+        exists = (Test-Path $settingsPath)
+        hasCustomCssImports = $settingsHasImport
+        containsRtlScript = $settingsContainsRtl
+    }
 }
-$Report["settings"] = [ordered]@{
-    settingsPath = $settingsPath
-    exists = (Test-Path $settingsPath)
-    hasCustomCssImports = $settingsHasImport
-    containsRtlScript = ($settingsImports.Count -gt 0)
-}
+$Report["settings"] = $settingsReports
 
 # Check common RTL script locations
 $commonPaths = @(
@@ -142,7 +149,7 @@ Write-Host "=== SUMMARY ===" -ForegroundColor Yellow
 Write-Host "Claude VS Code versions found: $($Report.claudeVSCode.Count)"
 Write-Host "Claude Antigravity versions found: $($Report.claudeAntigravity.Count)"
 Write-Host "Antigravity chat.js exists: $($Report.antigravityChat.chatJsExists)"
-Write-Host "Settings exists: $($Report.settings.exists)"
+Write-Host "Settings files found: $(( $Report.settings | Where-Object { $_.exists } ).Count)"
 Write-Host ""
 
 Write-Host "=== DETAILS ===" -ForegroundColor Yellow
@@ -182,10 +189,20 @@ Write-Host "   backup exists:   $($Report.antigravityChat.chatBackupExists)"
 Write-Host "   injected marker: $($Report.antigravityChat.injectedMarkerFound)"
 
 Write-Host "\n-- settings.json --" -ForegroundColor Cyan
-Write-Host "   Path: $($Report.settings.settingsPath)"
-Write-Host "   exists:              $($Report.settings.exists)"
-Write-Host "   has custom imports:  $($Report.settings.hasCustomCssImports)"
-Write-Host "   contains RTL script: $($Report.settings.containsRtlScript)"
+if (($Report.settings | Where-Object { $_.exists }).Count -eq 0) {
+    Write-Host "   None found" -ForegroundColor Gray
+    Write-Host "   Expected paths:" -ForegroundColor Gray
+    foreach ($s in $settingsPaths) { Write-Host "   - $s" -ForegroundColor Gray }
+} else {
+    foreach ($s in $Report.settings) {
+        if (-not $s.exists) { continue }
+        Write-Host "   Path: $($s.settingsPath)"
+        Write-Host "   exists:              $($s.exists)"
+        Write-Host "   has custom imports:  $($s.hasCustomCssImports)"
+        Write-Host "   contains RTL script: $($s.containsRtlScript)"
+        Write-Host ""
+    }
+}
 
 Write-Host "\n-- RTL script files --" -ForegroundColor Cyan
 if ($Report.rtlScriptFiles.Count -eq 0) {

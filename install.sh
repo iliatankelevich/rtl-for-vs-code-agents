@@ -16,13 +16,46 @@ CONFIGURED_AGENTS=()
 
 # Detect OS
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    VSCODE_DIR="$HOME/Library/Application Support/Code"
     EXTENSIONS_DIR="$HOME/.vscode/extensions"
     ANTIGRAVITY_EXT_DIR="$HOME/.antigravity/extensions"
+
+    # Support VS Code stable and Insiders
+    VSCODE_DIR_CANDIDATES=()
+    [[ -d "$HOME/Library/Application Support/Code" ]] && VSCODE_DIR_CANDIDATES+=("$HOME/Library/Application Support/Code")
+    [[ -d "$HOME/Library/Application Support/Code - Insiders" ]] && VSCODE_DIR_CANDIDATES+=("$HOME/Library/Application Support/Code - Insiders")
 else
-    VSCODE_DIR="$HOME/.config/Code"
     EXTENSIONS_DIR="$HOME/.vscode/extensions"
     ANTIGRAVITY_EXT_DIR="$HOME/.antigravity/extensions"
+
+    # Support VS Code stable and Insiders
+    VSCODE_DIR_CANDIDATES=()
+    [[ -d "$HOME/.config/Code" ]] && VSCODE_DIR_CANDIDATES+=("$HOME/.config/Code")
+    [[ -d "$HOME/.config/Code - Insiders" ]] && VSCODE_DIR_CANDIDATES+=("$HOME/.config/Code - Insiders")
+fi
+
+# Pick VS Code config folder
+if [ ${#VSCODE_DIR_CANDIDATES[@]} -eq 0 ]; then
+    # Fallback to stable default
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        VSCODE_DIR="$HOME/Library/Application Support/Code"
+    else
+        VSCODE_DIR="$HOME/.config/Code"
+    fi
+elif [ ${#VSCODE_DIR_CANDIDATES[@]} -eq 1 ]; then
+    VSCODE_DIR="${VSCODE_DIR_CANDIDATES[0]}"
+else
+    echo ""
+    echo "Multiple VS Code profiles found:" 
+    for i in "${!VSCODE_DIR_CANDIDATES[@]}"; do
+        echo "  [$((i+1))] ${VSCODE_DIR_CANDIDATES[$i]}"
+    done
+    read -p "Select which settings.json to update (1-${#VSCODE_DIR_CANDIDATES[@]}): " VS_CODE_PICK
+    if [[ "$VS_CODE_PICK" =~ ^[0-9]+$ ]] && [ "$VS_CODE_PICK" -ge 1 ] && [ "$VS_CODE_PICK" -le ${#VSCODE_DIR_CANDIDATES[@]} ]; then
+        VSCODE_DIR="${VSCODE_DIR_CANDIDATES[$((VS_CODE_PICK-1))]}"
+    else
+        VSCODE_DIR="${VSCODE_DIR_CANDIDATES[0]}"
+        echo "Invalid choice; defaulting to: $VSCODE_DIR"
+    fi
 fi
 
 SETTINGS_FILE="$VSCODE_DIR/User/settings.json"
@@ -184,6 +217,9 @@ if [ -z "$CUSTOM_PATH" ]; then
     CUSTOM_PATH="$HOME/vscode-custom"
 fi
 
+# Expand ~ if provided
+CUSTOM_PATH="${CUSTOM_PATH/#\~/$HOME}"
+
 # Create directory if it doesn't exist
 if [ ! -d "$CUSTOM_PATH" ]; then
     mkdir -p "$CUSTOM_PATH"
@@ -198,29 +234,47 @@ echo "   Copied rtl-for-vscode-agents.js"
 CONFIGURED_AGENTS+=("Copilot")
 
 # Update settings.json
-# Convert path to file:/// format
-FILE_URL="file:///$DEST_SCRIPT"
+# Convert path to file:/// format (handles spaces)
+if command -v python3 &> /dev/null; then
+    FILE_URL=$(python3 - <<'PY'
+import pathlib, sys
+path = sys.argv[1]
+print(pathlib.Path(path).expanduser().resolve().as_uri())
+PY
+    "$DEST_SCRIPT")
+else
+    # Fallback: basic conversion (spaces -> %20)
+    FILE_URL="file:///$DEST_SCRIPT"
+    FILE_URL="${FILE_URL// /%20}"
+fi
 
-if [ -f "$SETTINGS_FILE" ]; then
-    RAW_CONTENT="$(cat "$SETTINGS_FILE")"
+# Ensure settings.json exists
+SETTINGS_DIR="$(dirname "$SETTINGS_FILE")"
+mkdir -p "$SETTINGS_DIR"
+if [ ! -f "$SETTINGS_FILE" ]; then
+    echo "{}" > "$SETTINGS_FILE"
+fi
 
-    if echo "$RAW_CONTENT" | grep -Fq "$FILE_URL"; then
-        echo "   Script already in settings.json"
-    elif echo "$RAW_CONTENT" | grep -Eq '"vscode_custom_css\.imports"'; then
-        UPDATED_CONTENT=$(printf "%s" "$RAW_CONTENT" | perl -0777 -pe 's/("vscode_custom_css\.imports"\s*:\s*\[)/$1\n        "'"$FILE_URL"'",/s')
-        printf "%s" "$UPDATED_CONTENT" > "$SETTINGS_FILE"
-        echo "   Updated vscode_custom_css.imports"
-    else
-        NEW_PROPERTY="\"vscode_custom_css.imports\": [\"$FILE_URL\"],"
-        UPDATED_CONTENT=$(printf "%s" "$RAW_CONTENT" | perl -0777 -pe 's/^\s*\{/{\n    '"$NEW_PROPERTY"'/s')
-        printf "%s" "$UPDATED_CONTENT" > "$SETTINGS_FILE"
-        echo "   Added vscode_custom_css.imports to settings"
-    fi
+RAW_CONTENT="$(cat "$SETTINGS_FILE")"
 
+if echo "$RAW_CONTENT" | grep -Fq "$FILE_URL"; then
+    echo "   Script already in settings.json"
+elif echo "$RAW_CONTENT" | grep -Eq '"vscode_custom_css\.imports"'; then
+    UPDATED_CONTENT=$(printf "%s" "$RAW_CONTENT" | perl -0777 -pe 's/("vscode_custom_css\.imports"\s*:\s*\[)/$1\n        "'"$FILE_URL"'",/s')
+    printf "%s" "$UPDATED_CONTENT" > "$SETTINGS_FILE"
+    echo "   Updated vscode_custom_css.imports"
+else
+    NEW_PROPERTY="\"vscode_custom_css.imports\": [\"$FILE_URL\"],"
+    UPDATED_CONTENT=$(printf "%s" "$RAW_CONTENT" | perl -0777 -pe 's/^\s*\{/{\n    '"$NEW_PROPERTY"'/s')
+    printf "%s" "$UPDATED_CONTENT" > "$SETTINGS_FILE"
+    echo "   Added vscode_custom_css.imports to settings"
+fi
+
+# Verify update
+if grep -Fq "$FILE_URL" "$SETTINGS_FILE"; then
     echo "   Settings updated successfully!"
 else
-    echo "   Error: settings.json not found at $SETTINGS_FILE"
-    echo "   Please add manually:"
+    echo "   Warning: Could not verify settings update. Please add manually:"
     echo "   \"vscode_custom_css.imports\": [\"$FILE_URL\"]"
 fi
 
