@@ -25,12 +25,12 @@ function Extract-SelectorsFromFile {
 
     $chatMatch = [regex]::Match($content, 'chatSelectors\s*:\s*\[(?<block>[\s\S]*?)\]\s*,')
     if ($chatMatch.Success) {
-        $result.chatSelectors = [regex]::Matches($chatMatch.Groups['block'].Value, '"([^"]+)"') | ForEach-Object { $_.Groups[1].Value }
+        $result.chatSelectors = [regex]::Matches($chatMatch.Groups['block'].Value, "'([^']+)'\s*,?") | ForEach-Object { $_.Groups[1].Value }
     }
 
     $inputMatch = [regex]::Match($content, 'inputSelectors\s*:\s*\[(?<block>[\s\S]*?)\]\s*,')
     if ($inputMatch.Success) {
-        $result.inputSelectors = [regex]::Matches($inputMatch.Groups['block'].Value, '"([^"]+)"') | ForEach-Object { $_.Groups[1].Value }
+        $result.inputSelectors = [regex]::Matches($inputMatch.Groups['block'].Value, "'([^']+)'\s*,?") | ForEach-Object { $_.Groups[1].Value }
     }
 
     return $result

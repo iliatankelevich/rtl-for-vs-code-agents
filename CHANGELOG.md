@@ -1,5 +1,8 @@
 # Changelog
 
+## v4.3.3
+- **Diagnostics:** Fix selector extraction (avoid attribute value noise)
+
 ## v4.3.2
 - **Diagnostics:** Added Windows/Mac diagnostic scripts
 - **Diagnostics:** Print selectors from injected files for verification

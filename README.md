@@ -112,6 +112,9 @@ See [CHANGELOG.md](CHANGELOG.md) for full history.
 - **Diagnostics:** Added Windows/Mac diagnostic scripts
 - **Diagnostics:** Print selectors from injected files for verification
 
+### v4.3.3
+- **Diagnostics:** Fix selector extraction (avoid attribute value noise)
+
 ### v4.2.1
 - **Antigravity Chat:** Fix streaming RTL for Antigravity's built-in chat
 - **Selectors:** Update Claude Code selectors (`.U.N`, `.U.e`)
