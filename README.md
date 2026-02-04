@@ -18,24 +18,24 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 ## Installation
 
-### For Claude Code (Recommended)
+### VSIX Installation (Recommended)
 
 1. Download the latest `.vsix` file from [Releases](https://github.com/GuyRonnen/rtl-for-vs-code-agents/releases)
 2. In VS Code: `Ctrl+Shift+X` → `...` → "Install from VSIX..."
+![Install from VSIX](InstallVSIX.png)
+
 3. Select the downloaded file
 4. Restart VS Code
 
-![Install from VSIX](InstallVSIX.png)
-
 That's it! The extension automatically injects RTL support into Claude Code - no additional setup needed.
 
-### For GitHub Copilot Chat
+### To Enable RTL in GitHub Copilot Chat also:
 
 Copilot Chat requires the [Custom CSS and JS Loader](https://marketplace.visualstudio.com/items?itemName=be5invis.vscode-custom-css) extension:
 
-1. Install this extension
-2. Run command: **RTL for VS Code Agents: Configure Custom CSS Loader**
-3. Run command: **Enable Custom CSS and JS** (from Custom CSS extension)
+1. Install [this](https://marketplace.visualstudio.com/items?itemName=be5invis.vscode-custom-css) extension
+2. Run command (Ctrl+Shift+P): **RTL for VS Code Agents: Configure Custom CSS Loader**
+3. Run command (Ctrl+Shift+P): **Enable Custom CSS and JS** (from Custom CSS extension)
 4. Restart VS Code
 
 ## Commands
