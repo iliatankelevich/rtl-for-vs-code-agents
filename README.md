@@ -16,9 +16,6 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 [![RTL for VS Code Agents - Preview](https://img.youtube.com/vi/9-sickqyI6Q/0.jpg)](https://youtu.be/9-sickqyI6Q)
 
-<details>
-<summary>Installation</summary>
-
 ## Installation
 
 ### VSIX Installation (Recommended)
@@ -41,29 +38,24 @@ Copilot Chat requires the [Custom CSS and JS Loader](https://marketplace.visuals
 3. Run command (Ctrl+Shift+P): **Enable Custom CSS and JS** (from Custom CSS extension)
 4. Restart VS Code
 
-</details>
-
 <details>
 <summary>Commands</summary>
-
-## Commands
 
 - **RTL for VS Code Agents: Check and Inject Claude Code** - Manually check and inject RTL into Claude Code
 - **RTL for VS Code Agents: Configure Custom CSS Loader** - Configure Custom CSS extension for Copilot
 </details>
+
 <details>
 <summary>Settings</summary>
-## Settings
-
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `rtlForVsCodeAgents.autoInject` | `true` | Automatically inject RTL into new Claude Code versions |
 | `rtlForVsCodeAgents.checkIntervalHours` | `0` | How often to check (0 = startup only) |
 | `rtlForVsCodeAgents.autoConfigureCustomCss` | `false` | Automatically configure Custom CSS Loader |
 </details>
+
 <details>
 <summary>Troubleshooting</summary>
-## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
@@ -72,9 +64,9 @@ Copilot Chat requires the [Custom CSS and JS Loader](https://marketplace.visuals
 | RTL not working in Copilot | Run "Configure Custom CSS Loader", then "Enable Custom CSS and JS" |
 | RTL stopped after VS Code update | Restart VS Code or run inject command again |
 </details>
+
 <details>
 <summary>Manual Installation (Advanced)</summary>
-## Manual Installation (Advanced)
 
 For manual installation or troubleshooting, scripts are available:
 
@@ -100,7 +92,6 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
-## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
