@@ -28,14 +28,14 @@
 
         // Selectors for chat content (add more as needed for different agents)
         chatSelectors: [
-            // Copilot/Claude
+            // Copilot
             '.chat-markdown-part.rendered-markdown',
             '.chat-markdown-part',
             '.rendered-markdown',
-            '.U.N', // Claude Code user messages
-            '.U.e', // Claude Code assistant messages
-            '._r',  // Claude Code RTL content container
-            '.d.undefined',   // Claude Code buttons with RTL content
+            // Claude Code (new version - using partial class matching for dynamic hashes)
+            '[class*="message_"][class*="userMessageContainer_"]', // User message outer wrapper (has both classes)
+            '[class*="timelineMessage_"]', // Agent/timeline messages container
+            '[class*="root_"]', // Agent message content root (contains p, ul, ol, etc.)
             // Antigravity (Google)
             '.whitespace-pre-wrap', // User messages
             'div.prose.prose-sm'    // Agent messages
@@ -406,7 +406,15 @@
                 return;
             }
 
-            // Default logic for Copilot/Claude
+            // Claude Code timeline/agent messages - process all child elements
+            if (element.matches && element.matches('[class*="timelineMessage_"], [class*="root_"]')) {
+                // For agent messages, check each paragraph/list independently
+                processChildrenForRTL(element);
+                element.setAttribute('data-rtl-container-processed', 'true');
+                return;
+            }
+
+            // Default logic for Copilot/Claude user messages
             const wasRTL = element.getAttribute('data-rtl-applied') === 'true';
             const needsRTL = shouldBeRTL(element);
 
@@ -483,6 +491,13 @@
 
                             // Process chat elements immediately
                             chatElements.forEach(element => {
+                                // Claude Code timeline/agent messages - process all child elements
+                                if (element.matches && element.matches('[class*="timelineMessage_"], [class*="root_"]')) {
+                                    processChildrenForRTL(element);
+                                    element.setAttribute('data-rtl-container-processed', 'true');
+                                    return;
+                                }
+
                                 const wasRTL = element.getAttribute('data-rtl-applied') === 'true';
                                 const needsRTL = shouldBeRTL(element);
 

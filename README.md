@@ -104,16 +104,20 @@ chmod +x ./diagnose-rtl.sh
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
-### v4.3.1
-- **Scripts:** `install.sh` aligned with Windows behavior (Claude + Antigravity detection)
-- **Uninstaller:** Added `uninstall.sh` for Mac/Linux
+### v4.4.0
+- **Selectors:** Update Claude Code selectors for new version (CSS modules with dynamic hashes)
+- **Selectors:** Use partial class matching for resilience against hash changes
+
+### v4.3.3
+- **Diagnostics:** Fix selector extraction (avoid attribute value noise)
 
 ### v4.3.2
 - **Diagnostics:** Added Windows/Mac diagnostic scripts
 - **Diagnostics:** Print selectors from injected files for verification
 
-### v4.3.3
-- **Diagnostics:** Fix selector extraction (avoid attribute value noise)
+### v4.3.1
+- **Scripts:** `install.sh` aligned with Windows behavior (Claude + Antigravity detection)
+- **Uninstaller:** Added `uninstall.sh` for Mac/Linux
 
 ### v4.2.1
 - **Antigravity Chat:** Fix streaming RTL for Antigravity's built-in chat

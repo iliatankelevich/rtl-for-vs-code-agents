@@ -1,5 +1,11 @@
 # Changelog
 
+## v4.4.0
+- **Selectors:** Update Claude Code selectors for new version (CSS modules with dynamic hashes)
+- **Selectors:** Use partial class matching (`[class*="..."]`) for resilience against hash changes
+- **User Messages:** Target outer wrapper with `[class*="message_"][class*="userMessageContainer_"]`
+- **Agent Messages:** Target `[class*="timelineMessage_"]` and `[class*="root_"]` for timeline messages
+
 ## v4.3.3
 - **Diagnostics:** Fix selector extraction (avoid attribute value noise)
 
