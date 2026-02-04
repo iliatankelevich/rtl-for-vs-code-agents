@@ -8,8 +8,9 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 - Automatic RTL detection for Hebrew, Arabic, Persian, Urdu, and more
 - Code blocks remain LTR
-- Works with GitHub Copilot Chat, Claude Code (VS Code + Antigravity), and Google Antigravity
+- Works with GitHub Copilot Chat, Claude Code, and Antigravity
 - Input box RTL support
+- Automatic injection into Claude Code (no manual setup needed)
 
 ## Preview
 
@@ -17,86 +18,66 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 ## Installation
 
-### VS Code Extension (Recommended)
+### Option 1: Install from VSIX (Recommended)
 
-This repository now includes a standard VS Code extension that:
+1. Download the latest `.vsix` file from [Releases](https://github.com/GuyRonnen/rtl-for-vs-code-agents/releases)
+2. In VS Code: `Ctrl+Shift+X` → `...` → "Install from VSIX..."
+3. Select the downloaded file
+4. Restart VS Code
 
-- Automatically checks for new Claude Code versions
-- Injects RTL support into any new Claude Code install
-- Optionally configures Custom CSS and JS Loader for Copilot/other agents
+That's it! The extension will automatically inject RTL support into Claude Code.
 
-After installing the extension, you can also run:
+### Option 2: For GitHub Copilot Chat
 
-- **RTL for VS Code Agents: Check and Inject Claude Code**
-- **RTL for VS Code Agents: Configure Custom CSS Loader**
+Copilot Chat requires the [Custom CSS and JS Loader](https://marketplace.visualstudio.com/items?itemName=be5invis.vscode-custom-css) extension:
 
-Settings:
+1. Install this extension
+2. Run command: **RTL for VS Code Agents: Configure Custom CSS Loader**
+3. Run command: **Enable Custom CSS and JS** (from Custom CSS extension)
+4. Restart VS Code
 
-- `rtlForVsCodeAgents.autoInject` (default: true)
-- `rtlForVsCodeAgents.checkIntervalHours` (default: 24)
-- `rtlForVsCodeAgents.autoConfigureCustomCss` (default: false)
+## Commands
 
-### Windows
+- **RTL for VS Code Agents: Check and Inject Claude Code** - Manually check and inject RTL into Claude Code
+- **RTL for VS Code Agents: Configure Custom CSS Loader** - Configure Custom CSS extension for Copilot
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install.ps1
-```
+## Settings
 
-### Mac/Linux
-
-```bash
-./install.sh
-```
-
-The installer handles everything automatically:
-- Installs the Custom CSS and JS Loader extension
-- Configures VS Code settings
-- Injects RTL support into Claude Code (both VS Code and Antigravity)
-- Injects RTL support into Antigravity's built-in chat
-
-![Installation script](image.png)
-
-## Uninstalling
-
-```powershell
-.\uninstall.ps1
-```
-
-```bash
-./uninstall.sh
-```
-
-Restores all original files from backups.
-
-## After Updates
-
-If RTL stops working after updating VS Code or Claude Code:
-
-1. Re-run `install.ps1` or `install.sh` to re-inject the scripts
-2. If that doesn't help, the CSS selectors may have changed - please open an issue
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `rtlForVsCodeAgents.autoInject` | `true` | Automatically inject RTL into new Claude Code versions |
+| `rtlForVsCodeAgents.checkIntervalHours` | `0` | How often to check (0 = startup only) |
+| `rtlForVsCodeAgents.autoConfigureCustomCss` | `false` | Automatically configure Custom CSS Loader |
 
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| "[Unsupported]" in title bar | Normal - this is expected |
-| RTL not applied | Run `Reload Custom CSS and JS` command, then restart VS Code |
-| RTL stopped after update | Re-run `install.ps1` or `install.sh` |
+| "[Unsupported]" in title bar | Normal - this is expected when using Custom CSS |
+| RTL not working in Claude Code | Run "Check and Inject Claude Code" command |
+| RTL not working in Copilot | Run "Configure Custom CSS Loader", then "Enable Custom CSS and JS" |
+| RTL stopped after VS Code update | Restart VS Code or run inject command again |
 
-## Diagnostics
+## Manual Installation (Advanced)
 
-Run these scripts to collect a readable status report (installed versions, backups, injected markers, selectors in use):
+For manual installation or troubleshooting, scripts are available:
 
 ### Windows
-
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
+powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-### Mac
-
+### Mac/Linux
 ```bash
-chmod +x ./diagnose-rtl.sh
+./install.sh
+```
+
+### Diagnostics
+```powershell
+# Windows
+powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
+
+# Mac/Linux
 ./diagnose-rtl.sh
 ```
 
@@ -104,59 +85,30 @@ chmod +x ./diagnose-rtl.sh
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
-### v4.4.0
-- **Selectors:** Update Claude Code selectors for new version (CSS modules with dynamic hashes)
-- **Selectors:** Use partial class matching for resilience against hash changes
+### v5.0.0
+- **VS Code Extension:** Now available as a proper VS Code extension (.vsix)
+- **Easy Installation:** Just install the extension - no manual scripts needed
+- **Selectors:** Update Claude Code selectors for new version
 
 ### v4.3.3
-- **Diagnostics:** Fix selector extraction (avoid attribute value noise)
-
-### v4.3.2
-- **Diagnostics:** Added Windows/Mac diagnostic scripts
-- **Diagnostics:** Print selectors from injected files for verification
-
-### v4.3.1
-- **Scripts:** `install.sh` aligned with Windows behavior (Claude + Antigravity detection)
-- **Uninstaller:** Added `uninstall.sh` for Mac/Linux
+- **Diagnostics:** Fix selector extraction
 
 ### v4.2.1
-- **Antigravity Chat:** Fix streaming RTL for Antigravity's built-in chat
-- **Selectors:** Update Claude Code selectors (`.U.N`, `.U.e`)
-- **Selectors:** Add Antigravity chat selectors (`.whitespace-pre-wrap`, `div.prose.prose-sm`)
-
-### v4.2.0
-- **Smarter Installer:** `install.ps1` and `install.sh` now detect and patch **all** installed versions of Claude Code (VS Code & Antigravity), ensuring RTL works even after extension updates or side-by-side installations.
-- **Enhanced Uninstaller:** `uninstall.ps1` cleans up all detected versions.
-- **Performance:** Optimized selectors (reverted unnecessary Shadow DOM traversals).
-
-### v4.0.1
-- **Unified Script:** Merged Google Antigravity support directly into the main `rtl-for-vs-code-agents.js`. No separate injection files needed.
-- **Cleanup:** Removed deprecated separate script files.
-
-### v4.0.0
-- Add Claude Code injection for Antigravity
-- Fix streaming messages RTL detection
-- Update selectors for Claude Code 2.1.19
-- Remove redundant script files
-- Simplify codebase and README
-
-### v3.0.5
-- Add installation script screenshot to README
-
-### v3.0.4
-- Improve installer and documentation
-
-### v3.0.3
-- Fix user message selector for Claude Code
+- **Antigravity Chat:** Fix streaming RTL
+- **Selectors:** Update Claude Code and Antigravity selectors
 
 <details>
 <summary>Older versions</summary>
 
-### v3.0.2
-- Update selectors for Claude Code 2.1.5
+### v4.2.0
+- Smarter installer - detects all Claude Code versions
+
+### v4.0.0
+- Add Claude Code injection for Antigravity
+- Fix streaming messages RTL detection
 
 ### v3.0.0
-- Fix input box RTL flickering in Copilot chat
+- Fix input box RTL flickering
 
 ### v2.0.0
 - Add automated installation scripts

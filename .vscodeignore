@@ -1,0 +1,6 @@
+.vscode/**
+.claude/**
+.git/**
+.gitignore
+output-for-guy.txt
+*.vsix

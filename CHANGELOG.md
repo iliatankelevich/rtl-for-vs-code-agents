@@ -1,6 +1,9 @@
 # Changelog
 
-## v4.4.0
+## v5.0.0
+- **VS Code Extension:** Now available as a proper VS Code extension (.vsix)
+- **Easy Installation:** Just install the extension - no manual scripts needed
+- **Auto Injection:** Automatically detects and injects RTL into Claude Code
 - **Selectors:** Update Claude Code selectors for new version (CSS modules with dynamic hashes)
 - **Selectors:** Use partial class matching (`[class*="..."]`) for resilience against hash changes
 - **User Messages:** Target outer wrapper with `[class*="message_"][class*="userMessageContainer_"]`

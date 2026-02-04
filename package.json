@@ -2,18 +2,20 @@
   "name": "rtl-for-vs-code-agents",
   "displayName": "RTL for VS Code Agents",
   "description": "Right-to-left (RTL) support for AI chat agents, with automatic Claude Code injection.",
-  "version": "4.4.0",
+  "version": "5.0.0",
   "publisher": "local",
   "license": "GPL-3.0",
-  "icon": "image.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GuyRonnen/rtl-for-vs-code-agents.git"
+  },
+  "icon": "icon128.png",
   "engines": {
     "vscode": "^1.85.0"
   },
   "main": "./src/extension.js",
   "activationEvents": [
-    "onStartupFinished",
-    "onCommand:rtlForVsCodeAgents.checkAndInject",
-    "onCommand:rtlForVsCodeAgents.configureCustomCss"
+    "onStartupFinished"
   ],
   "contributes": {
     "commands": [
