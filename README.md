@@ -47,6 +47,7 @@ Copilot Chat requires the [Custom CSS and JS Loader](https://marketplace.visuals
 
 <details>
 <summary>Settings</summary>
+
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `rtlForVsCodeAgents.autoInject` | `true` | Automatically inject RTL into new Claude Code versions |
