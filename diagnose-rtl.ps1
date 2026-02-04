@@ -25,12 +25,12 @@ function Extract-SelectorsFromFile {
 
     $chatMatch = [regex]::Match($content, 'chatSelectors\s*:\s*\[(?<block>[\s\S]*?)\]\s*,')
     if ($chatMatch.Success) {
-        $result.chatSelectors = [regex]::Matches($chatMatch.Groups['block'].Value, "'([^']+)'\s*,?") | ForEach-Object { $_.Groups[1].Value }
+        $result.chatSelectors = [regex]::Matches($chatMatch.Groups['block'].Value, "'([^']+)'|\"([^\"]+)\"") | ForEach-Object { if ($_.Groups[1].Value) { $_.Groups[1].Value } else { $_.Groups[2].Value } }
     }
 
     $inputMatch = [regex]::Match($content, 'inputSelectors\s*:\s*\[(?<block>[\s\S]*?)\]\s*,')
     if ($inputMatch.Success) {
-        $result.inputSelectors = [regex]::Matches($inputMatch.Groups['block'].Value, "'([^']+)'\s*,?") | ForEach-Object { $_.Groups[1].Value }
+        $result.inputSelectors = [regex]::Matches($inputMatch.Groups['block'].Value, "'([^']+)'|\"([^\"]+)\"") | ForEach-Object { if ($_.Groups[1].Value) { $_.Groups[1].Value } else { $_.Groups[2].Value } }
     }
 
     return $result
@@ -135,12 +135,12 @@ if (Test-Path $selectorsPath) {
 
     $chatMatch = [regex]::Match($scriptContent, 'chatSelectors\s*:\s*\[(?<block>[\s\S]*?)\]\s*,')
     if ($chatMatch.Success) {
-        $chatSelectors = [regex]::Matches($chatMatch.Groups['block'].Value, '"([^"]+)"') | ForEach-Object { $_.Groups[1].Value }
+        $chatSelectors = [regex]::Matches($chatMatch.Groups['block'].Value, "'([^']+)'|\"([^\"]+)\"") | ForEach-Object { if ($_.Groups[1].Value) { $_.Groups[1].Value } else { $_.Groups[2].Value } }
     }
 
     $inputMatch = [regex]::Match($scriptContent, 'inputSelectors\s*:\s*\[(?<block>[\s\S]*?)\]\s*,')
     if ($inputMatch.Success) {
-        $inputSelectors = [regex]::Matches($inputMatch.Groups['block'].Value, '"([^"]+)"') | ForEach-Object { $_.Groups[1].Value }
+        $inputSelectors = [regex]::Matches($inputMatch.Groups['block'].Value, "'([^']+)'|\"([^\"]+)\"") | ForEach-Object { if ($_.Groups[1].Value) { $_.Groups[1].Value } else { $_.Groups[2].Value } }
     }
 }
 

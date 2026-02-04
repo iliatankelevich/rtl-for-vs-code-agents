@@ -133,7 +133,7 @@ extract_selectors() {
     else
         block=$(awk '/inputSelectors: *\[/{flag=1;next} /\]/{if(flag){flag=0}} flag{print}' "$file")
     fi
-    printf "%s" "$block" | grep -o "'[^']\+'" | sed "s/'//g"
+    printf "%s" "$block" | grep -Eo "'[^']+'|\"[^\"]+\"" | sed "s/^'//;s/'$//;s/^\"//;s/\"$//"
 }
 
 print_selectors() {
