@@ -83,6 +83,23 @@ If RTL stops working after updating VS Code or Claude Code:
 | RTL not applied | Run `Reload Custom CSS and JS` command, then restart VS Code |
 | RTL stopped after update | Re-run `install.ps1` or `install.sh` |
 
+## Diagnostics
+
+Run these scripts to collect a readable status report (installed versions, backups, injected markers, selectors in use):
+
+### Windows
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
+```
+
+### Mac
+
+```bash
+chmod +x ./diagnose-rtl.sh
+./diagnose-rtl.sh
+```
+
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
@@ -90,6 +107,10 @@ See [CHANGELOG.md](CHANGELOG.md) for full history.
 ### v4.3.1
 - **Scripts:** `install.sh` aligned with Windows behavior (Claude + Antigravity detection)
 - **Uninstaller:** Added `uninstall.sh` for Mac/Linux
+
+### v4.3.2
+- **Diagnostics:** Added Windows/Mac diagnostic scripts
+- **Diagnostics:** Print selectors from injected files for verification
 
 ### v4.2.1
 - **Antigravity Chat:** Fix streaming RTL for Antigravity's built-in chat

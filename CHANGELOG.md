@@ -1,5 +1,9 @@
 # Changelog
 
+## v4.3.2
+- **Diagnostics:** Added Windows/Mac diagnostic scripts
+- **Diagnostics:** Print selectors from injected files for verification
+
 ## v4.3.1
 - **Scripts:** `install.sh` aligned with Windows behavior (Claude + Antigravity detection)
 - **Uninstaller:** Added `uninstall.sh` for Mac/Linux
