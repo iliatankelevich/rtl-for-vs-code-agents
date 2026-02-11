@@ -1,5 +1,10 @@
 # Changelog
 
+## v6.0.0
+- **Cursor Support:** Add Claude Code injection for Cursor IDE (`~/.cursor/extensions/`)
+- **Auto Injection:** Extension now detects Claude Code in VS Code, Cursor, and Antigravity
+- **Scripts:** Updated install.ps1, install.sh, uninstall.ps1, uninstall.sh with Cursor support
+
 ## v5.0.0
 - **VS Code Extension:** Now available as a proper VS Code extension (.vsix)
 - **Easy Installation:** Just install the extension - no manual scripts needed

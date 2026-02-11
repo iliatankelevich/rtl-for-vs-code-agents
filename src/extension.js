@@ -19,6 +19,7 @@ function listClaudeInstallations() {
     const home = os.homedir();
     const locations = [
         { label: 'VS Code', basePath: path.join(home, '.vscode', 'extensions') },
+        { label: 'Cursor', basePath: path.join(home, '.cursor', 'extensions') },
         { label: 'Antigravity', basePath: path.join(home, '.antigravity', 'extensions') }
     ];
 

@@ -48,8 +48,25 @@ if ($ClaudeVSCodeList.Count -gt 0) {
     }
 }
 
+# Check Cursor - Find ALL versions
+$CursorExtPath = "$env:USERPROFILE\.cursor\extensions"
+$ClaudeCursorList = @()
+if (Test-Path $CursorExtPath) {
+    $ClaudeCursorList = Get-ChildItem -Path $CursorExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue
+
+    if ($ClaudeCursorList.Count -gt 0) {
+        foreach ($ext in $ClaudeCursorList) {
+            Write-Host "   Processing Cursor ($($ext.Name))..." -ForegroundColor Cyan
+            $result = Restore-ClaudeCodeBackup -ExtensionPath $ext.FullName -Location "Cursor"
+            if ($result -eq $true) { $RestoredCount++ }
+            elseif ($result -eq $false) { $ErrorCount++ }
+        }
+    }
+}
+
 # Check Antigravity - Find ALL versions
 $AntigravityExtPath = "$env:USERPROFILE\.antigravity\extensions"
+$ClaudeAntigravityList = @()
 if (Test-Path $AntigravityExtPath) {
     $ClaudeAntigravityList = Get-ChildItem -Path $AntigravityExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue
     
@@ -63,7 +80,7 @@ if (Test-Path $AntigravityExtPath) {
     }
 }
 
-if ($ClaudeVSCodeList.Count -eq 0 -and (-not (Test-Path $AntigravityExtPath) -or $ClaudeAntigravityList.Count -eq 0)) {
+if ($ClaudeVSCodeList.Count -eq 0 -and $ClaudeCursorList.Count -eq 0 -and (-not (Test-Path $AntigravityExtPath) -or $ClaudeAntigravityList.Count -eq 0)) {
     Write-Host "   - Claude Code extension not found" -ForegroundColor Gray
 }
 

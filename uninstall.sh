@@ -37,10 +37,12 @@ restore_claude_backup() {
 if [[ "$OSTYPE" == "darwin"* ]]; then
     VSCODE_DIR="$HOME/Library/Application Support/Code"
     EXTENSIONS_DIR="$HOME/.vscode/extensions"
+    CURSOR_EXT_DIR="$HOME/.cursor/extensions"
     ANTIGRAVITY_EXT_DIR="$HOME/.antigravity/extensions"
 else
     VSCODE_DIR="$HOME/.config/Code"
     EXTENSIONS_DIR="$HOME/.vscode/extensions"
+    CURSOR_EXT_DIR="$HOME/.cursor/extensions"
     ANTIGRAVITY_EXT_DIR="$HOME/.antigravity/extensions"
 fi
 
@@ -51,6 +53,10 @@ SETTINGS_FILE="$VSCODE_DIR/User/settings.json"
 echo "Step 1: Restoring Claude Code..."
 
 CLAUDE_VSCODE_EXTENSIONS=$(find "$EXTENSIONS_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*" 2>/dev/null)
+CLAUDE_CURSOR_EXTENSIONS=""
+if [ -d "$CURSOR_EXT_DIR" ]; then
+    CLAUDE_CURSOR_EXTENSIONS=$(find "$CURSOR_EXT_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*" 2>/dev/null)
+fi
 CLAUDE_ANTIGRAVITY_EXTENSIONS=""
 if [ -d "$ANTIGRAVITY_EXT_DIR" ]; then
     CLAUDE_ANTIGRAVITY_EXTENSIONS=$(find "$ANTIGRAVITY_EXT_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*" 2>/dev/null)
@@ -68,6 +74,18 @@ if [ -n "$CLAUDE_VSCODE_EXTENSIONS" ]; then
     done <<< "$CLAUDE_VSCODE_EXTENSIONS"
 fi
 
+if [ -n "$CLAUDE_CURSOR_EXTENSIONS" ]; then
+    while read -r ext; do
+        [ -z "$ext" ] && continue
+        echo "   Processing Cursor ($(basename "$ext"))..."
+        restore_claude_backup "$ext" "Cursor"
+        case $? in
+            0) RESTORED_COUNT=$((RESTORED_COUNT + 1)) ;;
+            1) ERROR_COUNT=$((ERROR_COUNT + 1)) ;;
+        esac
+    done <<< "$CLAUDE_CURSOR_EXTENSIONS"
+fi
+
 if [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
     while read -r ext; do
         [ -z "$ext" ] && continue
@@ -80,7 +98,7 @@ if [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
     done <<< "$CLAUDE_ANTIGRAVITY_EXTENSIONS"
 fi
 
-if [ -z "$CLAUDE_VSCODE_EXTENSIONS" ] && [ -z "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
+if [ -z "$CLAUDE_VSCODE_EXTENSIONS" ] && [ -z "$CLAUDE_CURSOR_EXTENSIONS" ] && [ -z "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
     echo "   - Claude Code extension not found"
 fi
 

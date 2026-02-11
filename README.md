@@ -8,7 +8,7 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 - Automatic RTL detection for Hebrew, Arabic, Persian, Urdu, and more
 - Code blocks remain LTR
-- Works with GitHub Copilot Chat, Claude Code, and Antigravity
+- Works with GitHub Copilot Chat, Claude Code (VS Code, Cursor, Antigravity), and Antigravity Chat
 - Input box RTL support
 - Automatic injection into Claude Code (no manual setup needed)
 
@@ -96,9 +96,12 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
+### v6.0.0
+- **Cursor Support:** Claude Code in Cursor now supported
+- **Auto Injection:** Detects Claude Code in VS Code, Cursor, and Antigravity
+
 ### v5.0.0
 - **VS Code Extension:** Now available as a proper VS Code extension (.vsix)
-- **Easy Installation:** Just install the extension - no manual scripts needed
 - **Selectors:** Update Claude Code selectors for new version
 
 ### v4.3.3

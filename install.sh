@@ -17,6 +17,7 @@ CONFIGURED_AGENTS=()
 # Detect OS
 if [[ "$OSTYPE" == "darwin"* ]]; then
     EXTENSIONS_DIR="$HOME/.vscode/extensions"
+    CURSOR_EXT_DIR="$HOME/.cursor/extensions"
     ANTIGRAVITY_EXT_DIR="$HOME/.antigravity/extensions"
 
     # Support VS Code stable and Insiders
@@ -25,6 +26,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     [[ -d "$HOME/Library/Application Support/Code - Insiders" ]] && VSCODE_DIR_CANDIDATES+=("$HOME/Library/Application Support/Code - Insiders")
 else
     EXTENSIONS_DIR="$HOME/.vscode/extensions"
+    CURSOR_EXT_DIR="$HOME/.cursor/extensions"
     ANTIGRAVITY_EXT_DIR="$HOME/.antigravity/extensions"
 
     # Support VS Code stable and Insiders
@@ -64,6 +66,10 @@ SETTINGS_FILE="$VSCODE_DIR/User/settings.json"
 echo "Step 1: Locating Claude Code extension..."
 # Find all versions
 CLAUDE_VSCODE_EXTENSIONS=$(find "$EXTENSIONS_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*" 2>/dev/null)
+CLAUDE_CURSOR_EXTENSIONS=""
+if [ -d "$CURSOR_EXT_DIR" ]; then
+    CLAUDE_CURSOR_EXTENSIONS=$(find "$CURSOR_EXT_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*" 2>/dev/null)
+fi
 CLAUDE_ANTIGRAVITY_EXTENSIONS=""
 if [ -d "$ANTIGRAVITY_EXT_DIR" ]; then
     CLAUDE_ANTIGRAVITY_EXTENSIONS=$(find "$ANTIGRAVITY_EXT_DIR" -maxdepth 1 -type d -name "anthropic.claude-code-*" 2>/dev/null)
@@ -75,6 +81,12 @@ if [ -n "$CLAUDE_VSCODE_EXTENSIONS" ]; then
         echo "   - $(basename "$match")"
     done
 fi
+if [ -n "$CLAUDE_CURSOR_EXTENSIONS" ]; then
+    echo "   Found in Cursor:"
+    echo "$CLAUDE_CURSOR_EXTENSIONS" | while read -r match; do
+        echo "   - $(basename "$match")"
+    done
+fi
 if [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
     echo "   Found in Antigravity:"
     echo "$CLAUDE_ANTIGRAVITY_EXTENSIONS" | while read -r match; do
@@ -82,7 +94,7 @@ if [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
     done
 fi
 
-if [ -n "$CLAUDE_VSCODE_EXTENSIONS" ] || [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
+if [ -n "$CLAUDE_VSCODE_EXTENSIONS" ] || [ -n "$CLAUDE_CURSOR_EXTENSIONS" ] || [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
     # Ask user if they want to inject into Claude Code
     read -p $'\nDo you want to inject RTL support into ALL found Claude Code versions? (y/n): ' INJECT_CLAUDE
 
@@ -116,6 +128,37 @@ if [ -n "$CLAUDE_VSCODE_EXTENSIONS" ] || [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]
                     echo "      Error: index.js not found in webview folder"
                 fi
             done <<< "$CLAUDE_VSCODE_EXTENSIONS"
+        fi
+
+        if [ -n "$CLAUDE_CURSOR_EXTENSIONS" ]; then
+            while read -r CLAUDE_EXTENSION; do
+                [ -z "$CLAUDE_EXTENSION" ] && continue
+                WEBVIEW_PATH="$CLAUDE_EXTENSION/webview"
+                INDEX_JS="$WEBVIEW_PATH/index.js"
+
+                echo "   Injecting into Cursor ($(basename "$CLAUDE_EXTENSION"))..."
+
+                if [ -f "$INDEX_JS" ]; then
+                    # Backup
+                    BACKUP_PATH="$INDEX_JS.backup"
+                    if [ ! -f "$BACKUP_PATH" ]; then
+                        cp "$INDEX_JS" "$BACKUP_PATH"
+                        echo "      Backup created: index.js.backup"
+                    else
+                        echo "      Backup already exists"
+                    fi
+
+                    echo "" >> "$INDEX_JS"
+                    cat "$SCRIPT_DIR/rtl-for-vs-code-agents.js" >> "$INDEX_JS"
+                    echo "      RTL script injected successfully!"
+
+                    if [[ ! " ${CONFIGURED_AGENTS[*]} " =~ " Claude Code (Cursor) " ]]; then
+                        CONFIGURED_AGENTS+=("Claude Code (Cursor)")
+                    fi
+                else
+                    echo "      Error: index.js not found in webview folder"
+                fi
+            done <<< "$CLAUDE_CURSOR_EXTENSIONS"
         fi
 
         if [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then

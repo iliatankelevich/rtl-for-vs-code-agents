@@ -44,6 +44,13 @@ Write-Host "Step 1: Locating Claude Code extension..." -ForegroundColor Yellow
 $VSCodeExtPath = "$env:USERPROFILE\.vscode\extensions"
 $ClaudeVSCodeList = Get-ChildItem -Path $VSCodeExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue
 
+# Check Cursor extensions
+$CursorExtPath = "$env:USERPROFILE\.cursor\extensions"
+$ClaudeCursorList = @()
+if (Test-Path $CursorExtPath) {
+    $ClaudeCursorList = Get-ChildItem -Path $CursorExtPath -Filter "anthropic.claude-code-*" -Directory -ErrorAction SilentlyContinue
+}
+
 # Check Antigravity extensions
 $AntigravityExtPath = "$env:USERPROFILE\.antigravity\extensions"
 $ClaudeAntigravityList = @()
@@ -56,13 +63,18 @@ if ($ClaudeVSCodeList.Count -gt 0) {
         Write-Host "   Found in VS Code: $($ext.Name)" -ForegroundColor Green
     }
 }
+if ($ClaudeCursorList.Count -gt 0) {
+    foreach ($ext in $ClaudeCursorList) {
+        Write-Host "   Found in Cursor: $($ext.Name)" -ForegroundColor Green
+    }
+}
 if ($ClaudeAntigravityList.Count -gt 0) {
     foreach ($ext in $ClaudeAntigravityList) {
         Write-Host "   Found in Antigravity: $($ext.Name)" -ForegroundColor Green
     }
 }
 
-if ($ClaudeVSCodeList.Count -gt 0 -or $ClaudeAntigravityList.Count -gt 0) {
+if ($ClaudeVSCodeList.Count -gt 0 -or $ClaudeCursorList.Count -gt 0 -or $ClaudeAntigravityList.Count -gt 0) {
     $InjectClaude = Read-Host "`nDo you want to inject RTL support into ALL found Claude Code versions? (y/n)"
 
     if ($InjectClaude -eq 'y' -or $InjectClaude -eq 'Y') {
@@ -72,6 +84,15 @@ if ($ClaudeVSCodeList.Count -gt 0 -or $ClaudeAntigravityList.Count -gt 0) {
             if (Inject-ClaudeCodeRTL -IndexJs $IndexJs -Location "VS Code") {
                 if ($ConfiguredAgents -notcontains "Claude Code (VS Code)") {
                     $ConfiguredAgents += "Claude Code (VS Code)"
+                }
+            }
+        }
+        foreach ($ext in $ClaudeCursorList) {
+            $IndexJs = Join-Path $ext.FullName "webview\index.js"
+            Write-Host "   Injecting into Cursor ($($ext.Name))..." -ForegroundColor Cyan
+            if (Inject-ClaudeCodeRTL -IndexJs $IndexJs -Location "Cursor") {
+                if ($ConfiguredAgents -notcontains "Claude Code (Cursor)") {
+                    $ConfiguredAgents += "Claude Code (Cursor)"
                 }
             }
         }
