@@ -199,8 +199,100 @@ fi
 
 echo ""
 
-# 2. Find Google Antigravity (if installed)
-echo "Step 2: Locating Google Antigravity..."
+# 2. Find Gemini Code Assist extension
+echo "Step 2: Locating Gemini Code Assist extension..."
+GEMINI_VSCODE_EXTENSIONS=$(find "$EXTENSIONS_DIR" -maxdepth 1 -type d -name "google.geminicodeassist-*" 2>/dev/null)
+GEMINI_CURSOR_EXTENSIONS=""
+if [ -d "$CURSOR_EXT_DIR" ]; then
+    GEMINI_CURSOR_EXTENSIONS=$(find "$CURSOR_EXT_DIR" -maxdepth 1 -type d -name "google.geminicodeassist-*" 2>/dev/null)
+fi
+
+if [ -n "$GEMINI_VSCODE_EXTENSIONS" ]; then
+    echo "   Found in VS Code:"
+    echo "$GEMINI_VSCODE_EXTENSIONS" | while read -r match; do
+        echo "   - $(basename "$match")"
+    done
+fi
+if [ -n "$GEMINI_CURSOR_EXTENSIONS" ]; then
+    echo "   Found in Cursor:"
+    echo "$GEMINI_CURSOR_EXTENSIONS" | while read -r match; do
+        echo "   - $(basename "$match")"
+    done
+fi
+
+if [ -n "$GEMINI_VSCODE_EXTENSIONS" ] || [ -n "$GEMINI_CURSOR_EXTENSIONS" ]; then
+    read -p $'\nDo you want to inject RTL support into ALL found Gemini Code Assist versions? (y/n): ' INJECT_GEMINI
+
+    if [[ "$INJECT_GEMINI" =~ ^[Yy]$ ]]; then
+        if [ -n "$GEMINI_VSCODE_EXTENSIONS" ]; then
+            while read -r GEMINI_EXTENSION; do
+                [ -z "$GEMINI_EXTENSION" ] && continue
+                APP_BUNDLE_JS="$GEMINI_EXTENSION/webview/app_bundle.js"
+
+                echo "   Injecting into VS Code ($(basename "$GEMINI_EXTENSION"))..."
+
+                if [ -f "$APP_BUNDLE_JS" ]; then
+                    # Backup
+                    BACKUP_PATH="$APP_BUNDLE_JS.backup"
+                    if [ ! -f "$BACKUP_PATH" ]; then
+                        cp "$APP_BUNDLE_JS" "$BACKUP_PATH"
+                        echo "      Backup created: app_bundle.js.backup"
+                    else
+                        echo "      Backup already exists"
+                    fi
+
+                    echo "" >> "$APP_BUNDLE_JS"
+                    cat "$SCRIPT_DIR/rtl-for-vs-code-agents.js" >> "$APP_BUNDLE_JS"
+                    echo "      RTL script injected successfully!"
+
+                    if [[ ! " ${CONFIGURED_AGENTS[*]} " =~ " Gemini Code Assist (VS Code) " ]]; then
+                        CONFIGURED_AGENTS+=("Gemini Code Assist (VS Code)")
+                    fi
+                else
+                    echo "      Error: app_bundle.js not found in webview folder"
+                fi
+            done <<< "$GEMINI_VSCODE_EXTENSIONS"
+        fi
+
+        if [ -n "$GEMINI_CURSOR_EXTENSIONS" ]; then
+            while read -r GEMINI_EXTENSION; do
+                [ -z "$GEMINI_EXTENSION" ] && continue
+                APP_BUNDLE_JS="$GEMINI_EXTENSION/webview/app_bundle.js"
+
+                echo "   Injecting into Cursor ($(basename "$GEMINI_EXTENSION"))..."
+
+                if [ -f "$APP_BUNDLE_JS" ]; then
+                    # Backup
+                    BACKUP_PATH="$APP_BUNDLE_JS.backup"
+                    if [ ! -f "$BACKUP_PATH" ]; then
+                        cp "$APP_BUNDLE_JS" "$BACKUP_PATH"
+                        echo "      Backup created: app_bundle.js.backup"
+                    else
+                        echo "      Backup already exists"
+                    fi
+
+                    echo "" >> "$APP_BUNDLE_JS"
+                    cat "$SCRIPT_DIR/rtl-for-vs-code-agents.js" >> "$APP_BUNDLE_JS"
+                    echo "      RTL script injected successfully!"
+
+                    if [[ ! " ${CONFIGURED_AGENTS[*]} " =~ " Gemini Code Assist (Cursor) " ]]; then
+                        CONFIGURED_AGENTS+=("Gemini Code Assist (Cursor)")
+                    fi
+                else
+                    echo "      Error: app_bundle.js not found in webview folder"
+                fi
+            done <<< "$GEMINI_CURSOR_EXTENSIONS"
+        fi
+    fi
+else
+    echo "   Gemini Code Assist extension not found"
+    echo "   Skipping Gemini Code Assist injection"
+fi
+
+echo ""
+
+# 3. Find Google Antigravity (if installed)
+echo "Step 3: Locating Google Antigravity..."
 
 ANTIGRAVITY_CHAT_JS=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -246,8 +338,8 @@ fi
 
 echo ""
 
-# 3. Set up Custom CSS and JS Loader
-echo "Step 3: Configuring Custom CSS and JS Loader..."
+# 4. Set up Custom CSS and JS Loader
+echo "Step 4: Configuring Custom CSS and JS Loader..."
 echo "   Settings file: $SETTINGS_FILE"
 
 # Ask user where to save the main script

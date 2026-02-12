@@ -11,20 +11,22 @@ echo ""
 RESTORED_COUNT=0
 ERROR_COUNT=0
 
-# Helper function to restore Claude Code backup
-restore_claude_backup() {
+# Helper function to restore a webview file from backup
+restore_webview_backup() {
     local extension_path="$1"
-    local location="$2"
+    local webview_file="$2"
+    local location="$3"
 
-    local index_js="$extension_path/webview/index.js"
-    local backup_path="$index_js.backup"
+    local target_js="$extension_path/$webview_file"
+    local backup_path="$target_js.backup"
+    local file_name="$(basename "$webview_file")"
 
     if [ -f "$backup_path" ]; then
-        if rm -f "$index_js" && mv "$backup_path" "$index_js"; then
-            echo "   OK Restored index.js from backup ($location)"
+        if rm -f "$target_js" && mv "$backup_path" "$target_js"; then
+            echo "   OK Restored $file_name from backup ($location)"
             return 0
         else
-            echo "   X Error restoring index.js ($location)"
+            echo "   X Error restoring $file_name ($location)"
             return 1
         fi
     else
@@ -66,7 +68,7 @@ if [ -n "$CLAUDE_VSCODE_EXTENSIONS" ]; then
     while read -r ext; do
         [ -z "$ext" ] && continue
         echo "   Processing VS Code ($(basename "$ext"))..."
-        restore_claude_backup "$ext" "VS Code"
+        restore_webview_backup "$ext" "webview/index.js" "VS Code"
         case $? in
             0) RESTORED_COUNT=$((RESTORED_COUNT + 1)) ;;
             1) ERROR_COUNT=$((ERROR_COUNT + 1)) ;;
@@ -78,7 +80,7 @@ if [ -n "$CLAUDE_CURSOR_EXTENSIONS" ]; then
     while read -r ext; do
         [ -z "$ext" ] && continue
         echo "   Processing Cursor ($(basename "$ext"))..."
-        restore_claude_backup "$ext" "Cursor"
+        restore_webview_backup "$ext" "webview/index.js" "Cursor"
         case $? in
             0) RESTORED_COUNT=$((RESTORED_COUNT + 1)) ;;
             1) ERROR_COUNT=$((ERROR_COUNT + 1)) ;;
@@ -90,7 +92,7 @@ if [ -n "$CLAUDE_ANTIGRAVITY_EXTENSIONS" ]; then
     while read -r ext; do
         [ -z "$ext" ] && continue
         echo "   Processing Antigravity ($(basename "$ext"))..."
-        restore_claude_backup "$ext" "Antigravity"
+        restore_webview_backup "$ext" "webview/index.js" "Antigravity"
         case $? in
             0) RESTORED_COUNT=$((RESTORED_COUNT + 1)) ;;
             1) ERROR_COUNT=$((ERROR_COUNT + 1)) ;;
@@ -104,9 +106,49 @@ fi
 
 echo ""
 
-# 2. Restore Google Antigravity
+# 2. Restore Gemini Code Assist
 
-echo "Step 2: Restoring Google Antigravity..."
+echo "Step 2: Restoring Gemini Code Assist..."
+
+GEMINI_VSCODE_EXTENSIONS=$(find "$EXTENSIONS_DIR" -maxdepth 1 -type d -name "google.geminicodeassist-*" 2>/dev/null)
+GEMINI_CURSOR_EXTENSIONS=""
+if [ -d "$CURSOR_EXT_DIR" ]; then
+    GEMINI_CURSOR_EXTENSIONS=$(find "$CURSOR_EXT_DIR" -maxdepth 1 -type d -name "google.geminicodeassist-*" 2>/dev/null)
+fi
+
+if [ -n "$GEMINI_VSCODE_EXTENSIONS" ]; then
+    while read -r ext; do
+        [ -z "$ext" ] && continue
+        echo "   Processing VS Code ($(basename "$ext"))..."
+        restore_webview_backup "$ext" "webview/app_bundle.js" "VS Code"
+        case $? in
+            0) RESTORED_COUNT=$((RESTORED_COUNT + 1)) ;;
+            1) ERROR_COUNT=$((ERROR_COUNT + 1)) ;;
+        esac
+    done <<< "$GEMINI_VSCODE_EXTENSIONS"
+fi
+
+if [ -n "$GEMINI_CURSOR_EXTENSIONS" ]; then
+    while read -r ext; do
+        [ -z "$ext" ] && continue
+        echo "   Processing Cursor ($(basename "$ext"))..."
+        restore_webview_backup "$ext" "webview/app_bundle.js" "Cursor"
+        case $? in
+            0) RESTORED_COUNT=$((RESTORED_COUNT + 1)) ;;
+            1) ERROR_COUNT=$((ERROR_COUNT + 1)) ;;
+        esac
+    done <<< "$GEMINI_CURSOR_EXTENSIONS"
+fi
+
+if [ -z "$GEMINI_VSCODE_EXTENSIONS" ] && [ -z "$GEMINI_CURSOR_EXTENSIONS" ]; then
+    echo "   - Gemini Code Assist extension not found"
+fi
+
+echo ""
+
+# 3. Restore Google Antigravity
+
+echo "Step 3: Restoring Google Antigravity..."
 
 ANTIGRAVITY_CHAT_JS=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -139,9 +181,9 @@ fi
 
 echo ""
 
-# 3. Clean up settings.json (optional)
+# 4. Clean up settings.json (optional)
 
-echo "Step 3: Cleaning settings.json..."
+echo "Step 4: Cleaning settings.json..."
 
 if [ -f "$SETTINGS_FILE" ]; then
     read -p "Do you want to remove RTL script from settings.json? (y/n): " REMOVE_FROM_SETTINGS

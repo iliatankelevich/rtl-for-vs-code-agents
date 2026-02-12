@@ -9,21 +9,22 @@ Write-Host ""
 $RestoredCount = 0
 $ErrorCount = 0
 
-# Helper function to restore Claude Code backup
-function Restore-ClaudeCodeBackup {
-    param($ExtensionPath, $Location)
+# Helper function to restore a webview file from backup
+function Restore-WebviewBackup {
+    param($ExtensionPath, $WebviewFile, $Location)
 
-    $IndexJs = Join-Path $ExtensionPath "webview\index.js"
-    $BackupPath = "$IndexJs.backup"
+    $TargetJs = Join-Path $ExtensionPath $WebviewFile
+    $BackupPath = "$TargetJs.backup"
+    $FileName = Split-Path $WebviewFile -Leaf
 
     if (Test-Path $BackupPath) {
         try {
-            Remove-Item $IndexJs -Force
-            Move-Item $BackupPath $IndexJs
-            Write-Host "   OK Restored index.js from backup ($Location)" -ForegroundColor Green
+            Remove-Item $TargetJs -Force
+            Move-Item $BackupPath $TargetJs
+            Write-Host "   OK Restored $FileName from backup ($Location)" -ForegroundColor Green
             return $true
         } catch {
-            Write-Host "   X Error restoring index.js ($Location): $_" -ForegroundColor Red
+            Write-Host "   X Error restoring $FileName ($Location): $_" -ForegroundColor Red
             return $false
         }
     } else {
@@ -42,7 +43,7 @@ $ClaudeVSCodeList = Get-ChildItem -Path $VSCodeExtPath -Filter "anthropic.claude
 if ($ClaudeVSCodeList.Count -gt 0) {
     foreach ($ext in $ClaudeVSCodeList) {
         Write-Host "   Processing VS Code ($($ext.Name))..." -ForegroundColor Cyan
-        $result = Restore-ClaudeCodeBackup -ExtensionPath $ext.FullName -Location "VS Code"
+        $result = Restore-WebviewBackup -ExtensionPath $ext.FullName -WebviewFile "webview\index.js" -Location "VS Code"
         if ($result -eq $true) { $RestoredCount++ }
         elseif ($result -eq $false) { $ErrorCount++ }
     }
@@ -57,7 +58,7 @@ if (Test-Path $CursorExtPath) {
     if ($ClaudeCursorList.Count -gt 0) {
         foreach ($ext in $ClaudeCursorList) {
             Write-Host "   Processing Cursor ($($ext.Name))..." -ForegroundColor Cyan
-            $result = Restore-ClaudeCodeBackup -ExtensionPath $ext.FullName -Location "Cursor"
+            $result = Restore-WebviewBackup -ExtensionPath $ext.FullName -WebviewFile "webview\index.js" -Location "Cursor"
             if ($result -eq $true) { $RestoredCount++ }
             elseif ($result -eq $false) { $ErrorCount++ }
         }
@@ -73,7 +74,7 @@ if (Test-Path $AntigravityExtPath) {
     if ($ClaudeAntigravityList.Count -gt 0) {
         foreach ($ext in $ClaudeAntigravityList) {
             Write-Host "   Processing Antigravity ($($ext.Name))..." -ForegroundColor Cyan
-            $result = Restore-ClaudeCodeBackup -ExtensionPath $ext.FullName -Location "Antigravity"
+            $result = Restore-WebviewBackup -ExtensionPath $ext.FullName -WebviewFile "webview\index.js" -Location "Antigravity"
             if ($result -eq $true) { $RestoredCount++ }
             elseif ($result -eq $false) { $ErrorCount++ }
         }
@@ -86,8 +87,42 @@ if ($ClaudeVSCodeList.Count -eq 0 -and $ClaudeCursorList.Count -eq 0 -and (-not 
 
 Write-Host ""
 
-# 2. Restore Google Antigravity
-Write-Host "Step 2: Restoring Google Antigravity..." -ForegroundColor Yellow
+# 2. Restore Gemini Code Assist
+Write-Host "Step 2: Restoring Gemini Code Assist..." -ForegroundColor Yellow
+
+$GeminiVSCodeList = Get-ChildItem -Path $VSCodeExtPath -Filter "google.geminicodeassist-*" -Directory -ErrorAction SilentlyContinue
+
+if ($GeminiVSCodeList.Count -gt 0) {
+    foreach ($ext in $GeminiVSCodeList) {
+        Write-Host "   Processing VS Code ($($ext.Name))..." -ForegroundColor Cyan
+        $result = Restore-WebviewBackup -ExtensionPath $ext.FullName -WebviewFile "webview\app_bundle.js" -Location "VS Code"
+        if ($result -eq $true) { $RestoredCount++ }
+        elseif ($result -eq $false) { $ErrorCount++ }
+    }
+}
+
+$GeminiCursorList = @()
+if (Test-Path $CursorExtPath) {
+    $GeminiCursorList = Get-ChildItem -Path $CursorExtPath -Filter "google.geminicodeassist-*" -Directory -ErrorAction SilentlyContinue
+
+    if ($GeminiCursorList.Count -gt 0) {
+        foreach ($ext in $GeminiCursorList) {
+            Write-Host "   Processing Cursor ($($ext.Name))..." -ForegroundColor Cyan
+            $result = Restore-WebviewBackup -ExtensionPath $ext.FullName -WebviewFile "webview\app_bundle.js" -Location "Cursor"
+            if ($result -eq $true) { $RestoredCount++ }
+            elseif ($result -eq $false) { $ErrorCount++ }
+        }
+    }
+}
+
+if ($GeminiVSCodeList.Count -eq 0 -and $GeminiCursorList.Count -eq 0) {
+    Write-Host "   - Gemini Code Assist extension not found" -ForegroundColor Gray
+}
+
+Write-Host ""
+
+# 3. Restore Google Antigravity
+Write-Host "Step 3: Restoring Google Antigravity..." -ForegroundColor Yellow
 $AntigravityPath = "$env:LOCALAPPDATA\Programs\Antigravity"
 
 if (Test-Path $AntigravityPath) {
@@ -113,8 +148,8 @@ if (Test-Path $AntigravityPath) {
 
 Write-Host ""
 
-# 3. Clean up settings.json (optional)
-Write-Host "Step 3: Cleaning settings.json..." -ForegroundColor Yellow
+# 4. Clean up settings.json (optional)
+Write-Host "Step 4: Cleaning settings.json..." -ForegroundColor Yellow
 $SettingsPath = "$env:APPDATA\Code\User\settings.json"
 
 if (Test-Path $SettingsPath) {

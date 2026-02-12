@@ -2,7 +2,7 @@
  * RTL Support for VS Code AI Chat Agents
  * Supports Hebrew, Arabic, Persian, and other RTL languages
  *
- * Works with: GitHub Copilot Chat, Claude Code, and other AI chat extensions
+ * Works with: GitHub Copilot Chat, Claude Code, Gemini CLI, and other AI chat extensions
  *
  * Installation:
  * 1. Install "Custom CSS and JS Loader" extension in VS Code
@@ -36,6 +36,8 @@
             '[class*="message_"][class*="userMessageContainer_"]', // User message outer wrapper (has both classes)
             '[class*="timelineMessage_"]', // Agent/timeline messages container
             '[class*="root_"]', // Agent message content root (contains p, ul, ol, etc.)
+            // Gemini CLI
+            '.history-item-text',   // User and agent messages
             // Antigravity (Google)
             '.whitespace-pre-wrap', // User messages
             'div.prose.prose-sm'    // Agent messages
@@ -45,6 +47,8 @@
         inputSelectors: [
             // Claude Code input box
             'div[contenteditable="plaintext-only"][role="textbox"][aria-label="Message input"]',
+            // Gemini CLI input box
+            '.chat-submit-input[contenteditable="plaintext-only"]',
             // Copilot input box
             '.view-line'
         ],
@@ -97,6 +101,48 @@
     }
 
     /**
+     * Smart RTL detection based on first strong character + majority fallback.
+     * Scans for the first Unicode letter (skipping emojis, numbers, punctuation, bullets):
+     * - First strong char is RTL → always true
+     * - First strong char is LTR → true only if ≥30% of all letters are RTL
+     * - No letters found → false
+     *
+     * Examples:
+     *   "🎉 שלום"        → skip 🎉, space → ש is RTL → true
+     *   "• פריט ראשון"   → skip •, space → פ is RTL → true
+     *   "Hello עולם"     → H is LTR, RTL < 30% → false
+     *   "1.1 Migration: הוספת שדות WhatsApp ו-table העדפות מטופל"
+     *                    → M is LTR, but RTL ≥ 30% → true
+     */
+    function shouldBeRTLText(text) {
+        if (!text) return false;
+        const trimmed = text.trim();
+        if (!trimmed) return false;
+
+        let firstStrongIsRTL = null;
+        let rtlCount = 0;
+        let ltrCount = 0;
+
+        for (const char of trimmed) {
+            if (isRTLChar(char)) {
+                rtlCount++;
+                if (firstStrongIsRTL === null) firstStrongIsRTL = true;
+            } else if (/\p{L}/u.test(char)) {
+                ltrCount++;
+                if (firstStrongIsRTL === null) firstStrongIsRTL = false;
+            }
+            // else: neutral character (emoji, number, punctuation, space) - skip
+        }
+
+        if (firstStrongIsRTL === null) return false; // no letters at all
+        if (firstStrongIsRTL) return true; // first strong char is RTL → always RTL
+
+        // First strong char is LTR - check if at least 30% of letters are RTL
+        const totalLetters = rtlCount + ltrCount;
+        return totalLetters > 0 && (rtlCount / totalLetters) >= 0.3;
+    }
+
+    /**
      * Get the first text content from an element's subtree
      */
     function getFirstTextContent(element) {
@@ -131,7 +177,7 @@
      */
     function shouldBeRTL(element) {
         const firstText = getFirstTextContent(element);
-        return containsRTL(firstText);
+        return shouldBeRTLText(firstText);
     }
 
     /**
@@ -153,12 +199,13 @@
 
         // Apply to paragraphs - check each child independently
         element.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6').forEach(el => {
-            // Check if this specific element starts with RTL
-            const firstText = getFirstTextContent(el);
-            if (containsRTL(firstText)) {
+            if (shouldBeRTLText(el.textContent)) {
                 el.style.direction = 'rtl';
                 el.style.textAlign = 'right';
                 el.style.unicodeBidi = 'plaintext';
+                if (el.tagName === 'LI') {
+                    el.style.listStylePosition = 'inside';
+                }
             }
         });
 
@@ -334,12 +381,14 @@
                 return;
             }
 
-            const firstText = getFirstTextContent(el);
-            if (containsRTL(firstText)) {
+            if (shouldBeRTLText(el.textContent)) {
                 el.style.direction = 'rtl';
                 el.style.textAlign = 'right';
                 el.style.unicodeBidi = 'plaintext';
                 el.style.fontFamily = CONFIG.fontFamily;
+                if (el.tagName === 'LI') {
+                    el.style.listStylePosition = 'inside';
+                }
             }
         });
 
@@ -387,13 +436,18 @@
                 // Only process if not already processed
                 if (!element.hasAttribute('data-rtl-container-processed')) {
                     const firstText = (element.textContent || '').trim().substring(0, 100);
-                    if (containsRTL(firstText)) {
+                    if (shouldBeRTLText(firstText)) {
                         element.setAttribute('data-rtl-container-processed', 'true');
-                        // Apply RTL to all text elements inside (p, h1-h6, li)
+                        // Apply RTL to text elements that should be RTL (check each independently)
                         element.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li').forEach(el => {
-                            el.style.direction = 'rtl';
-                            el.style.textAlign = 'right';
-                            el.setAttribute('data-rtl-applied', 'true');
+                            if (shouldBeRTLText(el.textContent)) {
+                                el.style.direction = 'rtl';
+                                el.style.textAlign = 'right';
+                                el.setAttribute('data-rtl-applied', 'true');
+                                if (el.tagName === 'LI') {
+                                    el.style.listStylePosition = 'inside';
+                                }
+                            }
                         });
                         // Also handle lists (ol, ul)
                         element.querySelectorAll('ol, ul').forEach(list => {

@@ -12,27 +12,27 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Track which agents were configured
 $ConfiguredAgents = @()
 
-# Helper function to inject RTL into Claude Code
-function Inject-ClaudeCodeRTL {
-    param($IndexJs, $Location)
+# Helper function to inject RTL into a webview JS file
+function Inject-RTLScript {
+    param($TargetJs, $FileName)
 
-    if (Test-Path $IndexJs) {
+    if (Test-Path $TargetJs) {
         # Backup
-        $BackupPath = "$IndexJs.backup"
+        $BackupPath = "$TargetJs.backup"
         if (-not (Test-Path $BackupPath)) {
-            Copy-Item $IndexJs $BackupPath
-            Write-Host "   Backup created: index.js.backup" -ForegroundColor Green
+            Copy-Item $TargetJs $BackupPath
+            Write-Host "   Backup created: $FileName.backup" -ForegroundColor Green
         } else {
             Write-Host "   Backup already exists" -ForegroundColor Yellow
         }
 
         # Inject
         $RtlScript = Get-Content (Join-Path $ScriptDir "rtl-for-vs-code-agents.js") -Raw
-        Add-Content -Path $IndexJs -Value "`n$RtlScript"
+        Add-Content -Path $TargetJs -Value "`n$RtlScript"
         Write-Host "   RTL script injected successfully!" -ForegroundColor Green
         return $true
     } else {
-        Write-Host "   Error: index.js not found in webview folder" -ForegroundColor Red
+        Write-Host "   Error: $FileName not found in webview folder" -ForegroundColor Red
         return $false
     }
 }
@@ -81,7 +81,7 @@ if ($ClaudeVSCodeList.Count -gt 0 -or $ClaudeCursorList.Count -gt 0 -or $ClaudeA
         foreach ($ext in $ClaudeVSCodeList) {
             $IndexJs = Join-Path $ext.FullName "webview\index.js"
             Write-Host "   Injecting into VS Code ($($ext.Name))..." -ForegroundColor Cyan
-            if (Inject-ClaudeCodeRTL -IndexJs $IndexJs -Location "VS Code") {
+            if (Inject-RTLScript -TargetJs $IndexJs -FileName "index.js") {
                 if ($ConfiguredAgents -notcontains "Claude Code (VS Code)") {
                     $ConfiguredAgents += "Claude Code (VS Code)"
                 }
@@ -90,7 +90,7 @@ if ($ClaudeVSCodeList.Count -gt 0 -or $ClaudeCursorList.Count -gt 0 -or $ClaudeA
         foreach ($ext in $ClaudeCursorList) {
             $IndexJs = Join-Path $ext.FullName "webview\index.js"
             Write-Host "   Injecting into Cursor ($($ext.Name))..." -ForegroundColor Cyan
-            if (Inject-ClaudeCodeRTL -IndexJs $IndexJs -Location "Cursor") {
+            if (Inject-RTLScript -TargetJs $IndexJs -FileName "index.js") {
                 if ($ConfiguredAgents -notcontains "Claude Code (Cursor)") {
                     $ConfiguredAgents += "Claude Code (Cursor)"
                 }
@@ -99,7 +99,7 @@ if ($ClaudeVSCodeList.Count -gt 0 -or $ClaudeCursorList.Count -gt 0 -or $ClaudeA
         foreach ($ext in $ClaudeAntigravityList) {
             $IndexJs = Join-Path $ext.FullName "webview\index.js"
             Write-Host "   Injecting into Antigravity ($($ext.Name))..." -ForegroundColor Cyan
-            if (Inject-ClaudeCodeRTL -IndexJs $IndexJs -Location "Antigravity") {
+            if (Inject-RTLScript -TargetJs $IndexJs -FileName "index.js") {
                 if ($ConfiguredAgents -notcontains "Claude Code (Antigravity)") {
                     $ConfiguredAgents += "Claude Code (Antigravity)"
                 }
@@ -113,8 +113,61 @@ if ($ClaudeVSCodeList.Count -gt 0 -or $ClaudeCursorList.Count -gt 0 -or $ClaudeA
 
 Write-Host ""
 
-# 2. Find Google Antigravity
-Write-Host "Step 2: Locating Google Antigravity..." -ForegroundColor Yellow
+# 2. Find Gemini Code Assist extension
+Write-Host "Step 2: Locating Gemini Code Assist extension..." -ForegroundColor Yellow
+
+# Check VS Code extensions
+$GeminiVSCodeList = Get-ChildItem -Path $VSCodeExtPath -Filter "google.geminicodeassist-*" -Directory -ErrorAction SilentlyContinue
+
+# Check Cursor extensions
+$GeminiCursorList = @()
+if (Test-Path $CursorExtPath) {
+    $GeminiCursorList = Get-ChildItem -Path $CursorExtPath -Filter "google.geminicodeassist-*" -Directory -ErrorAction SilentlyContinue
+}
+
+if ($GeminiVSCodeList.Count -gt 0) {
+    foreach ($ext in $GeminiVSCodeList) {
+        Write-Host "   Found in VS Code: $($ext.Name)" -ForegroundColor Green
+    }
+}
+if ($GeminiCursorList.Count -gt 0) {
+    foreach ($ext in $GeminiCursorList) {
+        Write-Host "   Found in Cursor: $($ext.Name)" -ForegroundColor Green
+    }
+}
+
+if ($GeminiVSCodeList.Count -gt 0 -or $GeminiCursorList.Count -gt 0) {
+    $InjectGemini = Read-Host "`nDo you want to inject RTL support into ALL found Gemini Code Assist versions? (y/n)"
+
+    if ($InjectGemini -eq 'y' -or $InjectGemini -eq 'Y') {
+        foreach ($ext in $GeminiVSCodeList) {
+            $AppBundleJs = Join-Path $ext.FullName "webview\app_bundle.js"
+            Write-Host "   Injecting into VS Code ($($ext.Name))..." -ForegroundColor Cyan
+            if (Inject-RTLScript -TargetJs $AppBundleJs -FileName "app_bundle.js") {
+                if ($ConfiguredAgents -notcontains "Gemini Code Assist (VS Code)") {
+                    $ConfiguredAgents += "Gemini Code Assist (VS Code)"
+                }
+            }
+        }
+        foreach ($ext in $GeminiCursorList) {
+            $AppBundleJs = Join-Path $ext.FullName "webview\app_bundle.js"
+            Write-Host "   Injecting into Cursor ($($ext.Name))..." -ForegroundColor Cyan
+            if (Inject-RTLScript -TargetJs $AppBundleJs -FileName "app_bundle.js") {
+                if ($ConfiguredAgents -notcontains "Gemini Code Assist (Cursor)") {
+                    $ConfiguredAgents += "Gemini Code Assist (Cursor)"
+                }
+            }
+        }
+    }
+} else {
+    Write-Host "   Gemini Code Assist extension not found" -ForegroundColor Yellow
+    Write-Host "   Skipping Gemini Code Assist injection" -ForegroundColor Yellow
+}
+
+Write-Host ""
+
+# 3. Find Google Antigravity
+Write-Host "Step 3: Locating Google Antigravity..." -ForegroundColor Yellow
 $AntigravityPath = "$env:LOCALAPPDATA\Programs\Antigravity"
 
 if (Test-Path $AntigravityPath) {
@@ -164,8 +217,8 @@ if (Test-Path $AntigravityPath) {
 
 Write-Host ""
 
-# 3. Set up Custom CSS and JS Loader
-Write-Host "Step 3: Configuring Custom CSS and JS Loader..." -ForegroundColor Yellow
+# 4. Set up Custom CSS and JS Loader
+Write-Host "Step 4: Configuring Custom CSS and JS Loader..." -ForegroundColor Yellow
 
 # Find settings.json
 $SettingsPath = "$env:APPDATA\Code\User\settings.json"

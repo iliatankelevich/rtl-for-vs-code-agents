@@ -8,9 +8,9 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 - Automatic RTL detection for Hebrew, Arabic, Persian, Urdu, and more
 - Code blocks remain LTR
-- Works with GitHub Copilot Chat, Claude Code (VS Code, Cursor, Antigravity), and Antigravity Chat
+- Works with GitHub Copilot Chat, Claude Code (VS Code, Cursor, Antigravity), Gemini Code Assist, and Antigravity Chat
 - Input box RTL support
-- Automatic injection into Claude Code (no manual setup needed)
+- Automatic injection into Claude Code and Gemini Code Assist (no manual setup needed)
 
 ## Preview
 
@@ -27,7 +27,7 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 3. Select the downloaded file
 4. Restart VS Code
 
-That's it! The extension automatically injects RTL support into Claude Code - no additional setup needed.
+That's it! The extension automatically injects RTL support into Claude Code and Gemini Code Assist - no additional setup needed.
 
 ### To Enable RTL in GitHub Copilot Chat also:
 
@@ -61,7 +61,7 @@ Copilot Chat requires the [Custom CSS and JS Loader](https://marketplace.visuals
 | Problem | Solution |
 |---------|----------|
 | "[Unsupported]" in title bar | Normal - this is expected when using Custom CSS |
-| RTL not working in Claude Code | Run "Check and Inject Claude Code" command |
+| RTL not working in Claude Code / Gemini | Run "Check and Inject Claude Code" command |
 | RTL not working in Copilot | Run "Configure Custom CSS Loader", then "Enable Custom CSS and JS" |
 | RTL stopped after VS Code update | Restart VS Code or run inject command again |
 </details>
@@ -95,6 +95,13 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
+
+### v7.0.0
+- **Gemini Code Assist:** RTL support for Google Gemini Code Assist chat
+- **Auto Injection:** Detects and injects into Gemini Code Assist automatically
+- **Smart RTL Detection:** Direction based on first strong character (skips emojis, numbers, bullets)
+- **Majority Fallback:** Mixed Hebrew/English text (≥30% RTL letters) correctly detected as RTL
+- **List Bullets Fix:** RTL list items no longer lose their bullets
 
 ### v6.0.0
 - **Cursor Support:** Claude Code in Cursor now supported

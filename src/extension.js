@@ -15,12 +15,26 @@ function getScriptContent(extensionPath) {
     return fs.readFileSync(scriptPath, 'utf8');
 }
 
-function listClaudeInstallations() {
+function listExtensionInstallations() {
     const home = os.homedir();
     const locations = [
         { label: 'VS Code', basePath: path.join(home, '.vscode', 'extensions') },
         { label: 'Cursor', basePath: path.join(home, '.cursor', 'extensions') },
         { label: 'Antigravity', basePath: path.join(home, '.antigravity', 'extensions') }
+    ];
+
+    // Extension patterns to search for
+    const extensionPatterns = [
+        {
+            prefix: 'anthropic.claude-code-',
+            type: 'claude-extension',
+            webviewFile: path.join('webview', 'index.js')
+        },
+        {
+            prefix: 'google.geminicodeassist-',
+            type: 'gemini-extension',
+            webviewFile: path.join('webview', 'app_bundle.js')
+        }
     ];
 
     const results = [];
@@ -33,17 +47,20 @@ function listClaudeInstallations() {
         const entries = fs.readdirSync(location.basePath, { withFileTypes: true });
         for (const entry of entries) {
             if (!entry.isDirectory()) continue;
-            if (!entry.name.startsWith('anthropic.claude-code-')) continue;
 
-            const extensionDir = path.join(location.basePath, entry.name);
-            const indexPath = path.join(extensionDir, 'webview', 'index.js');
-            results.push({
-                type: 'claude-extension',
-                location: location.label,
-                name: entry.name,
-                extensionDir,
-                indexPath
-            });
+            for (const pattern of extensionPatterns) {
+                if (!entry.name.startsWith(pattern.prefix)) continue;
+
+                const extensionDir = path.join(location.basePath, entry.name);
+                const indexPath = path.join(extensionDir, pattern.webviewFile);
+                results.push({
+                    type: pattern.type,
+                    location: location.label,
+                    name: entry.name,
+                    extensionDir,
+                    indexPath
+                });
+            }
         }
     }
 
@@ -104,14 +121,22 @@ function buildTargetLabel(target) {
     if (target.type === 'antigravity-app') {
         return 'Antigravity (יישום)';
     }
+    if (target.type === 'gemini-extension') {
+        return `Gemini Code Assist (${target.location})`;
+    }
     return `Claude Code (${target.location})`;
 }
 
 async function confirmInjection(target) {
     const label = buildTargetLabel(target);
-    const nameLine = target.type === 'antigravity-app'
-        ? 'נמצאה התקנה של Antigravity שדורשת הזרקת RTL.'
-        : `נמצאה גרסה חדשה של Claude Code שדורשת הזרקת RTL.`;
+    let nameLine;
+    if (target.type === 'antigravity-app') {
+        nameLine = 'נמצאה התקנה של Antigravity שדורשת הזרקת RTL.';
+    } else if (target.type === 'gemini-extension') {
+        nameLine = 'נמצאה גרסה חדשה של Gemini Code Assist שדורשת הזרקת RTL.';
+    } else {
+        nameLine = 'נמצאה גרסה חדשה של Claude Code שדורשת הזרקת RTL.';
+    }
 
     const detail = target.name ? `\nפרטים: ${target.name}` : '';
 
@@ -125,12 +150,12 @@ async function confirmInjection(target) {
 
 function showPostInjectNotice(targets) {
     const includesAntigravity = targets.some(t => t.type === 'antigravity-app');
-    const includesClaude = targets.some(t => t.type === 'claude-extension');
+    const includesWebviewExtension = targets.some(t => t.type === 'claude-extension' || t.type === 'gemini-extension');
 
     let message = 'ההזרקה בוצעה בהצלחה.';
-    if (includesClaude) {
+    if (includesWebviewExtension) {
         message += ' השינוי ייכנס לתוקף רק לאחר אתחול VS Code או הפעלה מחדש של Custom CSS and JS Loader.';
-        message += ' כדי לעשות Reload: פתח את לוח הפקודות (Ctrl+Shift+P) והריץ “Reload Window”.';
+        message += ' כדי לעשות Reload: פתח את לוח הפקודות (Ctrl+Shift+P) והריץ "Reload Window".';
     }
     if (includesAntigravity) {
         message += ' עבור Antigravity יש להפעיל מחדש את היישום.';
@@ -148,13 +173,13 @@ async function checkAndInject(context, options = {}) {
     }
 
     const scriptContent = getScriptContent(context.extensionPath);
-    const installations = listClaudeInstallations();
+    const installations = listExtensionInstallations();
     const antigravityApp = getAntigravityAppInstallation();
     const targets = antigravityApp ? [...installations, antigravityApp] : installations;
 
     if (targets.length === 0) {
         if (!quiet && notifyNoChanges) {
-            vscode.window.showInformationMessage('לא נמצאו התקנות של Claude Code או Antigravity.');
+            vscode.window.showInformationMessage('לא נמצאו התקנות של Claude Code, Gemini Code Assist או Antigravity.');
         }
         return;
     }

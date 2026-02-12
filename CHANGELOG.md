@@ -1,5 +1,14 @@
 # Changelog
 
+## v7.0.0
+- **Gemini Code Assist:** Add RTL support for Google Gemini Code Assist chat (user messages, agent responses, and input box)
+- **Auto Injection:** Extension now detects and injects RTL into Gemini Code Assist (`webview/app_bundle.js`)
+- **Scripts:** Updated install/uninstall scripts (PS1, SH) with Gemini Code Assist support
+- **Refactoring:** Generalized injection functions to support multiple extension types
+- **Smart RTL Detection:** Detect direction by first strong Unicode character instead of first character (skips emojis, numbers, punctuation, bullets)
+- **Majority Fallback:** When text starts with LTR but ≥30% of letters are RTL (e.g. `"1.1 Migration: הוספת שדות"`), apply RTL
+- **List Bullets Fix:** Add `list-style-position: inside` to RTL list items so bullets don't disappear
+
 ## v6.0.0
 - **Cursor Support:** Add Claude Code injection for Cursor IDE (`~/.cursor/extensions/`)
 - **Auto Injection:** Extension now detects Claude Code in VS Code, Cursor, and Antigravity
