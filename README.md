@@ -49,7 +49,7 @@ Copilot Chat requires the [Custom CSS and JS Loader](https://marketplace.visuals
 ## And what about RTL for web chats!?
 ### (i.e. Claude.ai / NotebookLM / Perplexity / ChatGPT) and SaaSs (i.e. Slack / Monday / Heptabse)
 ### I've got you there also!!
-[![Multi-RTL Chrome Extension](Multi-RTL-Chrome.png)](https://multi-rtl.interact-ed.online)
+[![Multi-RTL Chrome Extension](ReadmeImages/Multi-RTL-Chrome.png)](https://multi-rtl.interact-ed.online)
 
 is all you need!
 

@@ -14,7 +14,9 @@
       "Bash(cmd /c \"dir C:\\\\Users\\\\guyro\\\\.vscode\\\\extensions\\\\rtl-for-vs-code-agents\")",
       "Bash(cmd /c:*)",
       "Bash(powershell -Command:*)",
-      "Bash(npx vsce:*)"
+      "Bash(npx vsce:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ]
   }
 }
