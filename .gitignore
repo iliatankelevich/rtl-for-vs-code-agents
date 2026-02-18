@@ -1,3 +1,11 @@
 *.mp4
 *.vsix
 node_modules/
+
+# Temporary / personal files
+output-for-guy.txt
+Untitled.png
+image.png
+
+# Local Claude Code settings
+.claude/settings.local.json
