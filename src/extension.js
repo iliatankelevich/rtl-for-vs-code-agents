@@ -117,32 +117,21 @@ function injectScript(indexPath, scriptContent) {
     return { changed: true, reason: 'injected' };
 }
 
-function buildTargetLabel(target) {
-    if (target.type === 'antigravity-app') {
-        return 'Antigravity (יישום)';
-    }
-    if (target.type === 'gemini-extension') {
-        return `Gemini Code Assist (${target.location})`;
-    }
-    return `Claude Code (${target.location})`;
-}
-
 async function confirmInjection(target) {
-    const label = buildTargetLabel(target);
     let nameLine;
     if (target.type === 'antigravity-app') {
-        nameLine = 'נמצאה התקנה של Antigravity שדורשת הזרקת RTL.';
+        nameLine = 'Antigravity: installation found requiring RTL injection.';
     } else if (target.type === 'gemini-extension') {
-        nameLine = 'נמצאה גרסה חדשה של Gemini Code Assist שדורשת הזרקת RTL.';
+        nameLine = 'Gemini Code Assist: new version found requiring RTL injection.';
     } else {
-        nameLine = 'נמצאה גרסה חדשה של Claude Code שדורשת הזרקת RTL.';
+        nameLine = 'Claude Code: new version found requiring RTL injection.';
     }
 
-    const detail = target.name ? `\nפרטים: ${target.name}` : '';
+    const detail = target.name ? `\nVersion: ${target.name}` : '';
 
-    const message = `${nameLine}${detail}\n\nההזרקה תשנה קובץ מקומי כדי להפעיל RTL. להמשיך?`;
-    const yes = 'כן, להזריק עכשיו';
-    const no = 'לא עכשיו';
+    const message = `${nameLine}${detail}\n\nRTL injection will modify a local file. Continue?`;
+    const yes = 'Inject';
+    const no = 'Not now';
 
     const choice = await vscode.window.showInformationMessage(message, yes, no);
     return choice === yes;
@@ -152,13 +141,12 @@ function showPostInjectNotice(targets) {
     const includesAntigravity = targets.some(t => t.type === 'antigravity-app');
     const includesWebviewExtension = targets.some(t => t.type === 'claude-extension' || t.type === 'gemini-extension');
 
-    let message = 'ההזרקה בוצעה בהצלחה.';
+    let message = 'RTL: injection successful.';
     if (includesWebviewExtension) {
-        message += ' השינוי ייכנס לתוקף רק לאחר אתחול VS Code או הפעלה מחדש של Custom CSS and JS Loader.';
-        message += ' כדי לעשות Reload: פתח את לוח הפקודות (Ctrl+Shift+P) והריץ "Reload Window".';
+        message += ' Reload required: Ctrl+Shift+P → "Reload Window".';
     }
     if (includesAntigravity) {
-        message += ' עבור Antigravity יש להפעיל מחדש את היישום.';
+        message += ' Antigravity: restart the app.';
     }
 
     vscode.window.showInformationMessage(message);
@@ -179,7 +167,7 @@ async function checkAndInject(context, options = {}) {
 
     if (targets.length === 0) {
         if (!quiet && notifyNoChanges) {
-            vscode.window.showInformationMessage('לא נמצאו התקנות של Claude Code, Gemini Code Assist או Antigravity.');
+            vscode.window.showInformationMessage('RTL: no installations of Claude Code, Gemini Code Assist or Antigravity found.');
         }
         return;
     }
@@ -222,12 +210,12 @@ async function checkAndInject(context, options = {}) {
         if (updatedPaths.length > 0) {
             showPostInjectNotice(updatedPaths);
         } else if (errors.length === 0 && notifyNoChanges) {
-            vscode.window.showInformationMessage('אין צורך בהזרקה חדשה.');
+            vscode.window.showInformationMessage('RTL injection: nothing to update.');
         }
 
         if (errors.length > 0) {
             const message = errors[0].error?.message || 'Unknown error';
-            vscode.window.showWarningMessage(`חלק מההזרקות נכשלו. שגיאה ראשונה: ${message}`);
+            vscode.window.showWarningMessage(`RTL injection: some injections failed — error: ${message}`);
         }
     }
 }
@@ -269,6 +257,41 @@ async function configureCustomCss(context, options = {}) {
     }
 }
 
+function isCopilotInjectionActive() {
+    try {
+        const htmlPath = path.join(vscode.env.appRoot, 'out', 'vs', 'workbench', 'workbench.desktop.main.html');
+        if (!fs.existsSync(htmlPath)) return null;
+        const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+
+        const config = vscode.workspace.getConfiguration();
+        const imports = config.get('vscode_custom_css.imports', []);
+        if (!Array.isArray(imports) || imports.length === 0) return null;
+
+        const rtlImports = imports.filter(url => typeof url === 'string' && url.includes('rtl-for-vs'));
+        if (rtlImports.length === 0) return null;
+
+        return rtlImports.some(url => htmlContent.includes(url));
+    } catch (e) {
+        return null;
+    }
+}
+
+async function checkCopilotStatus() {
+    const isActive = isCopilotInjectionActive();
+    if (isActive === null || isActive === true) return;
+
+    const reEnable = 'Enable Custom CSS';
+    const choice = await vscode.window.showWarningMessage(
+        'Copilot RTL: injection lost after VS Code update. Re-enable: "Enable Custom CSS and JS" + Reload Window.',
+        reEnable,
+        'Dismiss'
+    );
+    if (choice === reEnable) {
+        await vscode.commands.executeCommand('workbench.action.showCommands');
+        vscode.window.showInformationMessage('Search "Enable Custom CSS and JS", press Enter, then run "Reload Window".');
+    }
+}
+
 function scheduleAutoCheck(context) {
     const config = getConfig();
     if (!config.get('autoInject', true)) {
@@ -304,6 +327,7 @@ function activate(context) {
     );
 
     checkAndInject(context, { quiet: false, interactive: true, notifyNoChanges: false });
+    checkCopilotStatus();
     scheduleAutoCheck(context);
     maybeAutoConfigureCustomCss(context);
 

@@ -40,7 +40,12 @@
             '.history-item-text',   // User and agent messages
             // Antigravity (Google)
             '.whitespace-pre-wrap', // User messages
-            'div.prose.prose-sm'    // Agent messages
+            'div.prose.prose-sm',   // Agent messages
+            // Claude Code - AskUserQuestion popup
+            '[class*="questionTextLarge_"]',  // question text
+            '[class*="optionLabel_"]',        // option label
+            '[class*="optionDescription_"]',  // option description text
+            '[class*="navTab_"]'              // navigation tab buttons (button has defined width → text-align works)
         ],
 
         // Selectors for input boxes
@@ -50,7 +55,9 @@
             // Gemini CLI input box
             '.chat-submit-input[contenteditable="plaintext-only"]',
             // Copilot input box
-            '.view-line'
+            '.view-line',
+            // Claude Code - AskUserQuestion "Other" free-text input
+            '[class*="otherInput_"] [contenteditable="plaintext-only"]'
         ],
 
         // How often to check for new content (ms)

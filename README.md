@@ -10,6 +10,7 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 - Code blocks remain LTR
 - Works with GitHub Copilot Chat, Claude Code (VS Code, Cursor, Antigravity), Gemini Code Assist, and Antigravity Chat
 - Input box RTL support
+- Agent Questions RTL support — question text, options, and navigation tabs align right in Plan Mode and other agent prompts
 - Automatic injection into Claude Code and Gemini Code Assist (no manual setup needed)
 
 ## Preview
@@ -22,12 +23,18 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 1. Download the latest `.vsix` file from [Releases](https://github.com/GuyRonnen/rtl-for-vs-code-agents/releases)
 2. In VS Code: `Ctrl+Shift+X` → `...` → "Install from VSIX..."
-![Install from VSIX](InstallVSIX.png)
+![Install from VSIX](ReadmeImages/InstallVSIX.png)
 
 3. Select the downloaded file
 4. Restart VS Code
 
 That's it! The extension automatically injects RTL support into Claude Code and Gemini Code Assist - no additional setup needed.
+
+### Agent Questions in Plan Mode
+
+When Claude Code asks you questions (e.g. in Plan Mode), the popup now fully supports RTL — question text, option labels, descriptions, and navigation tabs all align right for Hebrew/RTL content. The free-text "Other" input also switches to RTL automatically.
+
+![Agent Questions RTL](ReadmeImages/RTLinAgentQuestions.png)
 
 ### To Enable RTL in GitHub Copilot Chat also:
 
@@ -75,7 +82,7 @@ is all you need!
 | "[Unsupported]" in title bar | Normal - this is expected when using Custom CSS |
 | RTL not working in Claude Code / Gemini | Run "Check and Inject Claude Code" command |
 | RTL not working in Copilot | Run "Configure Custom CSS Loader", then "Enable Custom CSS and JS" |
-| RTL stopped after VS Code update | Restart VS Code or run inject command again |
+| RTL stopped after VS Code update | The extension will notify you automatically — click "Enable Custom CSS" and run "Reload Window" |
 </details>
 
 <details>
@@ -107,6 +114,14 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
+
+### v7.2.0
+- **Agent Questions RTL:** Question text, option labels, descriptions, and nav tabs in Claude Code's agent prompts (Plan Mode) now align right for Hebrew/RTL content
+- **Agent Questions Input:** The "Other" free-text input in agent popups switches to RTL when typing Hebrew
+
+### v7.1.0
+- **Copilot RTL Detection:** Auto-detects if Copilot injection was lost after a VS Code update and notifies
+- **English-only Notifications:** Fixes BiDi rendering issues in VS Code's notification UI
 
 ### v7.0.0
 - **Gemini Code Assist:** RTL support for Google Gemini Code Assist chat

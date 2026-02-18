@@ -1,5 +1,15 @@
 # Changelog
 
+## v7.2.0
+- **Agent Questions RTL:** RTL support for Claude Code's `AskUserQuestion` popup (Plan Mode and other agent prompts) — question text, option labels, option descriptions, and navigation tab labels now align right when content is Hebrew/RTL
+- **Agent Questions Input:** The free-text "Other" input inside agent question popups now switches to RTL when typing Hebrew
+- **Selectors:** Added `[class*="questionTextLarge_"]`, `[class*="optionLabel_"]`, `[class*="optionDescription_"]`, `[class*="navTab_"]` to `chatSelectors`; added `[class*="otherInput_"] [contenteditable]` to `inputSelectors`
+
+## v7.1.0
+- **Copilot RTL Detection:** On startup, detects if the Copilot Custom CSS injection was lost after a VS Code update and notifies the user to re-enable it
+- **English-only Notifications:** Converted all extension notifications from Hebrew/mixed to English-only to avoid BiDi rendering issues in VS Code's LTR notification UI
+- **Code Cleanup:** Removed unused `buildTargetLabel` function
+
 ## v7.0.0
 - **Gemini Code Assist:** Add RTL support for Google Gemini Code Assist chat (user messages, agent responses, and input box)
 - **Auto Injection:** Extension now detects and injects RTL into Gemini Code Assist (`webview/app_bundle.js`)
