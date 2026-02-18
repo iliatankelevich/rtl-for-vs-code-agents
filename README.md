@@ -1,6 +1,7 @@
-# RTL for VS Code Agents
+# RTL for Code Agents
 
-Right-to-Left (RTL) support for AI chat agents in Visual Studio Code.
+Right-to-Left (RTL) support for AI chat agents in VS Code / Antigravity / Cursor
+
 
 Automatically detects Hebrew, Arabic, Persian, and other RTL languages and applies proper RTL styling.
 
@@ -15,7 +16,22 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 ## Preview
 
-[![RTL for VS Code Agents - Preview](https://img.youtube.com/vi/9-sickqyI6Q/0.jpg)](https://youtu.be/9-sickqyI6Q)
+### Click to watch me demonstrate it:
+[![RTL for VS Code Agents - Preview](ReadmeImages/YouTubPreview.png)](https://youtu.be/9-sickqyI6Q)
+
+### Full RTL Support in Major Code Agents:
+Copilot, Claude Code & Gemini Code Assist!
+
+RTL is automatically applied for all RTL texts in: user messages, agent responses, input box, and even agent questions in Plan Mode. All align right for RTL content:
+
+![Gemini Code Assist RTL](ReadmeImages/ExtensionDescAndGeminiSupport.png)
+
+### Agent Questions in Plan Mode
+
+When Claude Code asks you questions (e.g. in Plan Mode), the popup now fully supports RTL — question text, option labels, descriptions, and navigation tabs all align right for Hebrew/RTL content. The free-text "Other" input also switches to RTL automatically.
+
+![Agent Questions RTL](ReadmeImages/RTLinAgentQuestions.png)
+
 
 ## Installation
 
@@ -29,18 +45,6 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 4. Restart VS Code
 
 That's it! The extension automatically injects RTL support into Claude Code and Gemini Code Assist - no additional setup needed.
-
-### Agent Questions in Plan Mode
-
-When Claude Code asks you questions (e.g. in Plan Mode), the popup now fully supports RTL — question text, option labels, descriptions, and navigation tabs all align right for Hebrew/RTL content. The free-text "Other" input also switches to RTL automatically.
-
-![Agent Questions RTL](ReadmeImages/RTLinAgentQuestions.png)
-
-### Gemini Code Assist — Full RTL Support
-
-RTL is automatically injected into Gemini Code Assist — user messages, agent responses, and the input box all align right for Hebrew/RTL content.
-
-![Gemini Code Assist RTL](ReadmeImages/ExtensionDescAndGeminiSupport.png)
 
 ### To Enable RTL in GitHub Copilot Chat also:
 
