@@ -36,6 +36,12 @@ When Claude Code asks you questions (e.g. in Plan Mode), the popup now fully sup
 
 ![Agent Questions RTL](ReadmeImages/RTLinAgentQuestions.png)
 
+### Gemini Code Assist — Full RTL Support
+
+RTL is automatically injected into Gemini Code Assist — user messages, agent responses, and the input box all align right for Hebrew/RTL content.
+
+![Gemini Code Assist RTL](ReadmeImages/ExtensionDescAndGeminiSupport.png)
+
 ### To Enable RTL in GitHub Copilot Chat also:
 
 Copilot Chat requires the [Custom CSS and JS Loader](https://marketplace.visualstudio.com/items?itemName=be5invis.vscode-custom-css) extension:
