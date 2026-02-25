@@ -79,6 +79,8 @@ is all you need!
 
 - **RTL for VS Code Agents: Check and Inject Claude Code** - Manually check and inject RTL into Claude Code
 - **RTL for VS Code Agents: Configure Custom CSS Loader** - Configure Custom CSS extension for Copilot
+- **RTL for VS Code Agents: Check for Updates** - Check GitHub for a newer version and install it
+- **RTL for VS Code Agents: Remove All RTL Injections** - Restore all original files (run before uninstalling the extension)
 </details>
 
 <details>
@@ -89,6 +91,8 @@ is all you need!
 | `rtlForVsCodeAgents.autoInject` | `true` | Automatically inject RTL into new Claude Code versions |
 | `rtlForVsCodeAgents.checkIntervalHours` | `0` | How often to check (0 = startup only) |
 | `rtlForVsCodeAgents.autoConfigureCustomCss` | `false` | Automatically configure Custom CSS Loader |
+| `rtlForVsCodeAgents.autoCheckUpdates` | `true` | Automatically check for extension updates from GitHub on startup |
+| `rtlForVsCodeAgents.updateCheckIntervalHours` | `24` | How often to check for updates (0 = startup only) |
 </details>
 
 <details>
@@ -129,8 +133,12 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
-
-See [CHANGELOG.md](CHANGELOG.md) for full history.
+### v7.5.0
+- **Auto-Update:** Check for new versions from GitHub and install with one click — no more manual VSIX downloads
+- **Status Bar Button:** Shows current version in the bottom bar; click to check for updates. Highlights when an update is available
+- **Update Settings:** `autoCheckUpdates` and `updateCheckIntervalHours` control automatic checking
+- **Post-Update Re-injection:** After updating, old RTL injections are automatically restored and re-injected with the new script
+- **Remove Injections Command:** New "Remove All RTL Injections" command to cleanly restore all files before uninstalling
 
 ### v7.3.1
 - **Session Title Line Clamp:** Session title limited to 3 lines, preventing long prompts from overflowing

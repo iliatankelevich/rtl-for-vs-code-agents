@@ -2,9 +2,15 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const https = require('https');
 
 const MARKER = 'RTL for VS Code Agents';
 const SCRIPT_FILE = 'rtl-for-vs-code-agents.js';
+const GITHUB_OWNER = 'GuyRonnen';
+const GITHUB_REPO = 'rtl-for-vs-code-agents';
+const GITHUB_API_BASE = 'https://api.github.com';
+
+let statusBarItem;
 
 function getConfig() {
     return vscode.workspace.getConfiguration('rtlForVsCodeAgents');
@@ -292,6 +298,259 @@ async function checkCopilotStatus() {
     }
 }
 
+// --- Auto-Update functions ---
+
+function getLocalVersion(extensionPath) {
+    const pkgPath = path.join(extensionPath, 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    return pkg.version;
+}
+
+function parseVersion(versionStr) {
+    const clean = versionStr.replace(/^v/, '');
+    const parts = clean.split('.').map(Number);
+    return { major: parts[0] || 0, minor: parts[1] || 0, patch: parts[2] || 0 };
+}
+
+function isNewerVersion(remote, local) {
+    const r = parseVersion(remote);
+    const l = parseVersion(local);
+    if (r.major !== l.major) return r.major > l.major;
+    if (r.minor !== l.minor) return r.minor > l.minor;
+    return r.patch > l.patch;
+}
+
+function httpsGet(url) {
+    return new Promise((resolve, reject) => {
+        const options = {
+            headers: {
+                'User-Agent': 'rtl-for-vs-code-agents',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        };
+        https.get(url, options, (res) => {
+            if (res.statusCode === 301 || res.statusCode === 302) {
+                return httpsGet(res.headers.location).then(resolve, reject);
+            }
+            if (res.statusCode !== 200) {
+                return reject(new Error(`HTTP ${res.statusCode}`));
+            }
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => resolve(data));
+            res.on('error', reject);
+        }).on('error', reject);
+    });
+}
+
+function httpsDownload(url, destPath) {
+    return new Promise((resolve, reject) => {
+        const options = {
+            headers: { 'User-Agent': 'rtl-for-vs-code-agents', 'Accept': 'application/octet-stream' }
+        };
+        https.get(url, options, (res) => {
+            if (res.statusCode === 301 || res.statusCode === 302) {
+                return httpsDownload(res.headers.location, destPath).then(resolve, reject);
+            }
+            if (res.statusCode !== 200) {
+                return reject(new Error(`HTTP ${res.statusCode}`));
+            }
+            const file = fs.createWriteStream(destPath);
+            res.pipe(file);
+            file.on('finish', () => { file.close(); resolve(destPath); });
+            file.on('error', (err) => { fs.unlink(destPath, () => {}); reject(err); });
+        }).on('error', reject);
+    });
+}
+
+async function fetchLatestRelease() {
+    const url = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
+    const json = await httpsGet(url);
+    const release = JSON.parse(json);
+    const vsixAsset = release.assets && release.assets.find(a => a.name.endsWith('.vsix'));
+    return {
+        version: release.tag_name.replace(/^v/, ''),
+        tagName: release.tag_name,
+        name: release.name || release.tag_name,
+        body: release.body || '',
+        downloadUrl: vsixAsset ? vsixAsset.browser_download_url : null
+    };
+}
+
+function restoreAllBackups() {
+    const installations = listExtensionInstallations();
+    const antigravityApp = getAntigravityAppInstallation();
+    const targets = antigravityApp ? [...installations, antigravityApp] : installations;
+    let restored = 0;
+
+    for (const target of targets) {
+        const backupPath = `${target.indexPath}.backup`;
+        if (fs.existsSync(backupPath) && fs.existsSync(target.indexPath)) {
+            try {
+                fs.copyFileSync(backupPath, target.indexPath);
+                fs.unlinkSync(backupPath);
+                restored++;
+            } catch (e) {
+                console.error(`RTL: failed to restore backup for ${target.indexPath}:`, e.message);
+            }
+        }
+    }
+    return restored;
+}
+
+async function removeAllInjections(context) {
+    const yes = 'Remove All';
+    const no = 'Cancel';
+    const choice = await vscode.window.showWarningMessage(
+        'This will remove all RTL injections and restore original files. Continue?',
+        { modal: true }, yes, no
+    );
+    if (choice !== yes) return;
+
+    const restored = restoreAllBackups();
+    await context.globalState.update('rtlForVsCodeAgents.injectedPaths', []);
+
+    if (restored > 0) {
+        vscode.window.showInformationMessage(`RTL: restored ${restored} file(s) to original. Reload VS Code to apply.`);
+    } else {
+        vscode.window.showInformationMessage('RTL: no injections found to remove.');
+    }
+}
+
+function updateStatusBar(localVersion, remoteVersion) {
+    if (!statusBarItem) return;
+    if (remoteVersion && isNewerVersion(remoteVersion, localVersion)) {
+        statusBarItem.text = `$(cloud-download) RTL v${localVersion} → v${remoteVersion}`;
+        statusBarItem.tooltip = `RTL for VS Code Agents: Update available (v${remoteVersion}). Click to update.`;
+        statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+    } else {
+        statusBarItem.text = `RTL v${localVersion}`;
+        statusBarItem.tooltip = 'RTL for VS Code Agents: Click to check for updates';
+        statusBarItem.backgroundColor = undefined;
+    }
+}
+
+async function checkForUpdates(context, options = {}) {
+    const { quiet = false, isAutoCheck = false } = options;
+    const config = getConfig();
+    const localVersion = getLocalVersion(context.extensionPath);
+
+    if (isAutoCheck && !config.get('autoCheckUpdates', true)) {
+        return;
+    }
+
+    // Respect check interval for auto-checks
+    if (isAutoCheck) {
+        const hours = Number(config.get('updateCheckIntervalHours', 24)) || 24;
+        const lastCheck = context.globalState.get('rtlForVsCodeAgents.lastUpdateCheck', 0);
+        const elapsed = (Date.now() - lastCheck) / (1000 * 60 * 60);
+        if (hours > 0 && elapsed < hours) {
+            return;
+        }
+    }
+
+    try {
+        if (!quiet) {
+            statusBarItem && (statusBarItem.text = `$(sync~spin) RTL checking...`);
+        }
+
+        const release = await fetchLatestRelease();
+        await context.globalState.update('rtlForVsCodeAgents.lastUpdateCheck', Date.now());
+
+        updateStatusBar(localVersion, release.version);
+
+        if (!isNewerVersion(release.version, localVersion)) {
+            if (!quiet) {
+                vscode.window.showInformationMessage(`RTL for VS Code Agents: you are on the latest version (v${localVersion}).`);
+            }
+            return;
+        }
+
+        if (!release.downloadUrl) {
+            if (!quiet) {
+                vscode.window.showWarningMessage(`RTL update v${release.version} found, but no VSIX asset in the release.`);
+            }
+            return;
+        }
+
+        // Store release info for the update command
+        await context.globalState.update('rtlForVsCodeAgents.pendingUpdate', {
+            version: release.version,
+            name: release.name,
+            downloadUrl: release.downloadUrl
+        });
+
+        const updateNow = 'Update Now';
+        const later = 'Later';
+        const choice = await vscode.window.showInformationMessage(
+            `RTL for VS Code Agents: update available — v${localVersion} → v${release.version} (${release.name})`,
+            updateNow, later
+        );
+
+        if (choice === updateNow) {
+            await downloadAndInstall(context, release);
+        }
+    } catch (err) {
+        if (!quiet) {
+            vscode.window.showWarningMessage(`RTL update check failed: ${err.message}`);
+        }
+        updateStatusBar(localVersion, null);
+    }
+}
+
+async function downloadAndInstall(context, release) {
+    await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: `RTL: Updating to v${release.version}...`, cancellable: false },
+        async (progress) => {
+            try {
+                progress.report({ message: 'Restoring backups...' });
+                restoreAllBackups();
+
+                progress.report({ message: 'Downloading VSIX...' });
+                const tmpDir = os.tmpdir();
+                const vsixFileName = `rtl-for-vs-code-agents-${release.version}.vsix`;
+                const vsixPath = path.join(tmpDir, vsixFileName);
+                await httpsDownload(release.downloadUrl, vsixPath);
+
+                progress.report({ message: 'Installing...' });
+                await vscode.commands.executeCommand(
+                    'workbench.extensions.installExtension',
+                    vscode.Uri.file(vsixPath)
+                );
+
+                // Clean up temp file
+                try { fs.unlinkSync(vsixPath); } catch (e) {}
+
+                // Clear pending update
+                await context.globalState.update('rtlForVsCodeAgents.pendingUpdate', undefined);
+
+                const reload = 'Reload Window';
+                const choice = await vscode.window.showInformationMessage(
+                    `RTL for VS Code Agents updated to v${release.version}. Reload to apply.`,
+                    reload
+                );
+                if (choice === reload) {
+                    await vscode.commands.executeCommand('workbench.action.reloadWindow');
+                }
+            } catch (err) {
+                vscode.window.showErrorMessage(`RTL update failed: ${err.message}`);
+            }
+        }
+    );
+}
+
+async function handleVersionUpgrade(context) {
+    const localVersion = getLocalVersion(context.extensionPath);
+    const storedVersion = context.globalState.get('rtlForVsCodeAgents.installedVersion');
+
+    if (storedVersion && storedVersion !== localVersion) {
+        console.log(`RTL: version changed ${storedVersion} → ${localVersion}, re-injecting...`);
+        restoreAllBackups();
+    }
+
+    await context.globalState.update('rtlForVsCodeAgents.installedVersion', localVersion);
+}
+
 function scheduleAutoCheck(context) {
     const config = getConfig();
     if (!config.get('autoInject', true)) {
@@ -318,18 +577,58 @@ function maybeAutoConfigureCustomCss(context) {
     }
 }
 
-function activate(context) {
+function scheduleUpdateCheck(context) {
+    const config = getConfig();
+    if (!config.get('autoCheckUpdates', true)) return;
+
+    const hours = Number(config.get('updateCheckIntervalHours', 24)) || 24;
+    if (hours <= 0) return;
+
+    const intervalMs = hours * 60 * 60 * 1000;
+    const handle = setInterval(() => {
+        checkForUpdates(context, { quiet: true, isAutoCheck: true });
+    }, intervalMs);
+
+    context.subscriptions.push({ dispose: () => clearInterval(handle) });
+}
+
+function createStatusBarItem(context) {
+    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    statusBarItem.command = 'rtlForVsCodeAgents.checkForUpdates';
+    const localVersion = getLocalVersion(context.extensionPath);
+    updateStatusBar(localVersion, null);
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
+}
+
+async function activate(context) {
     console.log('RTL for VS Code Agents: Activating...');
 
+    // Handle version upgrade (restore old injections before re-injecting)
+    await handleVersionUpgrade(context);
+
+    // Create status bar item
+    createStatusBarItem(context);
+
+    // Register commands
     context.subscriptions.push(
         vscode.commands.registerCommand('rtlForVsCodeAgents.checkAndInject', () => checkAndInject(context, { quiet: false, interactive: true, notifyNoChanges: true })),
-        vscode.commands.registerCommand('rtlForVsCodeAgents.configureCustomCss', () => configureCustomCss(context))
+        vscode.commands.registerCommand('rtlForVsCodeAgents.configureCustomCss', () => configureCustomCss(context)),
+        vscode.commands.registerCommand('rtlForVsCodeAgents.checkForUpdates', () => checkForUpdates(context, { quiet: false })),
+        vscode.commands.registerCommand('rtlForVsCodeAgents.removeInjections', () => removeAllInjections(context))
     );
 
+    // Auto-inject RTL into agent webviews
     checkAndInject(context, { quiet: false, interactive: true, notifyNoChanges: false });
     checkCopilotStatus();
     scheduleAutoCheck(context);
     maybeAutoConfigureCustomCss(context);
+
+    // Auto-check for extension updates (delayed to not block startup)
+    setTimeout(() => {
+        checkForUpdates(context, { quiet: true, isAutoCheck: true });
+    }, 5000);
+    scheduleUpdateCheck(context);
 
     console.log('RTL for VS Code Agents: Activated successfully!');
 }

@@ -2,7 +2,7 @@
   "name": "rtl-for-vs-code-agents",
   "displayName": "RTL for VS Code Agents",
   "description": "Right-to-left (RTL) support for AI chat agents, with automatic Claude Code injection.",
-  "version": "7.3.1",
+  "version": "7.5.0",
   "publisher": "local",
   "license": "GPL-3.0",
   "repository": {
@@ -26,6 +26,14 @@
       {
         "command": "rtlForVsCodeAgents.configureCustomCss",
         "title": "RTL for VS Code Agents: Configure Custom CSS Loader"
+      },
+      {
+        "command": "rtlForVsCodeAgents.checkForUpdates",
+        "title": "RTL for VS Code Agents: Check for Updates"
+      },
+      {
+        "command": "rtlForVsCodeAgents.removeInjections",
+        "title": "RTL for VS Code Agents: Remove All RTL Injections"
       }
     ],
     "configuration": {
@@ -46,6 +54,17 @@
           "type": "boolean",
           "default": false,
           "description": "Automatically configure Custom CSS and JS Loader to load the RTL script."
+        },
+        "rtlForVsCodeAgents.autoCheckUpdates": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically check for updates from GitHub on startup."
+        },
+        "rtlForVsCodeAgents.updateCheckIntervalHours": {
+          "type": "number",
+          "default": 24,
+          "minimum": 0,
+          "description": "How often to check for updates (in hours). 0 = check on startup only."
         }
       }
     }
