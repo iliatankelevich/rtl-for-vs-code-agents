@@ -431,7 +431,7 @@ function updateStatusBar(localVersion, remoteVersion) {
 }
 
 async function checkForUpdates(context, options = {}) {
-    const { quiet = false, isAutoCheck = false } = options;
+    const { quiet = false, isAutoCheck = false, isPeriodicCheck = false } = options;
     const config = getConfig();
     const localVersion = getLocalVersion(context.extensionPath);
 
@@ -439,8 +439,8 @@ async function checkForUpdates(context, options = {}) {
         return;
     }
 
-    // Respect check interval for auto-checks
-    if (isAutoCheck) {
+    // Respect check interval only for periodic (setInterval) checks, not startup
+    if (isPeriodicCheck) {
         const hours = Number(config.get('updateCheckIntervalHours', 24)) || 24;
         const lastCheck = context.globalState.get('rtlForVsCodeAgents.lastUpdateCheck', 0);
         const elapsed = (Date.now() - lastCheck) / (1000 * 60 * 60);
@@ -586,7 +586,7 @@ function scheduleUpdateCheck(context) {
 
     const intervalMs = hours * 60 * 60 * 1000;
     const handle = setInterval(() => {
-        checkForUpdates(context, { quiet: true, isAutoCheck: true });
+        checkForUpdates(context, { quiet: true, isAutoCheck: true, isPeriodicCheck: true });
     }, intervalMs);
 
     context.subscriptions.push({ dispose: () => clearInterval(handle) });
