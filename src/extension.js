@@ -617,6 +617,9 @@ async function activate(context) {
         vscode.commands.registerCommand('rtlForVsCodeAgents.checkForUpdates', () => checkForUpdates(context, { quiet: false })),
         vscode.commands.registerCommand('rtlForVsCodeAgents.removeInjections', () => removeAllInjections(context)),
         vscode.commands.registerCommand('rtlForVsCodeAgents.showMenu', async () => {
+            // Run update check in background (updates status bar, shows notification if update found)
+            checkForUpdates(context, { quiet: true, isAutoCheck: true });
+
             const items = [
                 { label: '$(sync) Check for Updates', command: 'rtlForVsCodeAgents.checkForUpdates' },
                 { label: '$(syringe) Check and Inject RTL', command: 'rtlForVsCodeAgents.checkAndInject' },
