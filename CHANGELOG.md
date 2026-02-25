@@ -1,5 +1,9 @@
 # Changelog
 
+## v7.3.1
+- **Session Title Line Clamp:** Current session title in the header is limited to 3 lines with ellipsis, preventing long prompts from overflowing the header
+- **UI Accent Borders:** Light purple border on the conversation history header, coral border on user messages
+
 ## v7.3.0
 - **Conversation History RTL:** Session titles in the chat history dropdown now align right for Hebrew/RTL content
 - **History Dropdown UI:** Wider and taller dropdown, session names wrap instead of being truncated with ellipsis

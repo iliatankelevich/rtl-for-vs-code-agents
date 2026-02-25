@@ -132,6 +132,10 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
+### v7.3.1
+- **Session Title Line Clamp:** Session title limited to 3 lines, preventing long prompts from overflowing
+- **UI Accent Borders:** Light purple border on history header, coral border on user messages
+
 ### v7.3.0
 - **Conversation History RTL:** Session titles in the history dropdown align right for Hebrew/RTL content
 - **History Dropdown UI:** Wider and taller dropdown, session names wrap instead of being truncated

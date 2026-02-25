@@ -301,14 +301,25 @@
 
             /* Claude Code Chat History Header Button - unconditional overrides */
             [class*="sessionsButtonText_"] {
-                text-overflow: unset !important;
                 white-space: normal !important;
+                display: -webkit-box !important;
+                -webkit-line-clamp: 3 !important;
+                -webkit-box-orient: vertical !important;
+                overflow: hidden !important;
             }
             [class*="sessionsButtonContent_"] {
                 max-width: unset !important;
             }
             [class*="sessionsButton_"] {
                 max-width: unset !important;
+            }
+
+            /* Claude Code UI accent borders */
+            [class*="header_"]:has([class*="sessionsButton_"]) {
+                border: 2px solid #c8a2f8 !important;
+            }
+            [class*="userMessage_"] {
+                border: 2px solid #f98383 !important;
             }
         `;
         document.head.appendChild(style);
