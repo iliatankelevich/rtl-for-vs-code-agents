@@ -594,7 +594,7 @@ function scheduleUpdateCheck(context) {
 
 function createStatusBarItem(context) {
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    statusBarItem.command = 'rtlForVsCodeAgents.checkForUpdates';
+    statusBarItem.command = 'rtlForVsCodeAgents.showMenu';
     const localVersion = getLocalVersion(context.extensionPath);
     updateStatusBar(localVersion, null);
     statusBarItem.show();
@@ -615,7 +615,19 @@ async function activate(context) {
         vscode.commands.registerCommand('rtlForVsCodeAgents.checkAndInject', () => checkAndInject(context, { quiet: false, interactive: true, notifyNoChanges: true })),
         vscode.commands.registerCommand('rtlForVsCodeAgents.configureCustomCss', () => configureCustomCss(context)),
         vscode.commands.registerCommand('rtlForVsCodeAgents.checkForUpdates', () => checkForUpdates(context, { quiet: false })),
-        vscode.commands.registerCommand('rtlForVsCodeAgents.removeInjections', () => removeAllInjections(context))
+        vscode.commands.registerCommand('rtlForVsCodeAgents.removeInjections', () => removeAllInjections(context)),
+        vscode.commands.registerCommand('rtlForVsCodeAgents.showMenu', async () => {
+            const items = [
+                { label: '$(sync) Check for Updates', command: 'rtlForVsCodeAgents.checkForUpdates' },
+                { label: '$(syringe) Check and Inject RTL', command: 'rtlForVsCodeAgents.checkAndInject' },
+                { label: '$(settings-gear) Configure Custom CSS Loader', command: 'rtlForVsCodeAgents.configureCustomCss' },
+                { label: '$(trash) Remove All RTL Injections', command: 'rtlForVsCodeAgents.removeInjections' }
+            ];
+            const picked = await vscode.window.showQuickPick(items, { placeHolder: 'RTL for VS Code Agents' });
+            if (picked) {
+                await vscode.commands.executeCommand(picked.command);
+            }
+        })
     );
 
     // Auto-inject RTL into agent webviews

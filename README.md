@@ -133,9 +133,12 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v7.5.1
+- **Status Bar Menu:** Click the `RTL v7.5.1` button in the status bar to open a quick menu with all extension actions (Check for Updates, Inject RTL, Configure Custom CSS, Remove Injections)
+
 ### v7.5.0
 - **Auto-Update:** Check for new versions from GitHub and install with one click — no more manual VSIX downloads
-- **Status Bar Button:** Shows current version in the bottom bar; click to check for updates. Highlights when an update is available
+- **Status Bar Button:** Shows current version in the bottom bar; highlights when an update is available
 - **Update Settings:** `autoCheckUpdates` and `updateCheckIntervalHours` control automatic checking
 - **Post-Update Re-injection:** After updating, old RTL injections are automatically restored and re-injected with the new script
 - **Remove Injections Command:** New "Remove All RTL Injections" command to cleanly restore all files before uninstalling
