@@ -2,5 +2,30 @@
 .claude/**
 .git/**
 .gitignore
+.vscodeignore
 output-for-guy.txt
+
+# Old VSIX builds
 *.vsix
+
+# Videos
+*.mp4
+
+# Design/preview source files
+*.pdn
+SocialPreview*.png
+Untitled.png
+image.png
+RTLinAgentQuestions.png
+
+# Scripts (not needed at runtime - injection is handled by the extension)
+antigravity-install.ps1
+claude-install.ps1
+diagnose-rtl.ps1
+diagnose-rtl.sh
+install.ps1
+install.sh
+reinject.ps1
+restore-backups.ps1
+uninstall.ps1
+uninstall.sh
