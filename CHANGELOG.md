@@ -1,5 +1,10 @@
 # Changelog
 
+## v7.3.0
+- **Conversation History RTL:** Session titles in the chat history dropdown now align right for Hebrew/RTL content
+- **History Dropdown UI:** Wider and taller dropdown, session names wrap instead of being truncated with ellipsis
+- **Session Header Button:** Current session title wraps and grows with content instead of being clipped
+
 ## v7.2.0
 - **Agent Questions RTL:** RTL support for Claude Code's `AskUserQuestion` popup (Plan Mode and other agent prompts) — question text, option labels, option descriptions, and navigation tab labels now align right when content is Hebrew/RTL
 - **Agent Questions Input:** The free-text "Other" input inside agent question popups now switches to RTL when typing Hebrew

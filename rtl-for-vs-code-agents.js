@@ -283,6 +283,33 @@
                 unicode-bidi: bidi-override !important;
                 font-family: ${CONFIG.fontFamily} !important;
             }
+
+            /* Claude Code Chat History List - unconditional overrides */
+            [class*="sessionName_"] {
+                overflow: auto !important;
+                text-overflow: unset !important;
+                white-space: normal !important;
+            }
+            [class*="sessionItem_"] {
+                direction: rtl !important;
+                padding: 0 !important;
+            }
+            [class*="dropdown_"] {
+                width: max(400px, 100vw - 32px) !important;
+                max-height: 70% !important;
+            }
+
+            /* Claude Code Chat History Header Button - unconditional overrides */
+            [class*="sessionsButtonText_"] {
+                text-overflow: unset !important;
+                white-space: normal !important;
+            }
+            [class*="sessionsButtonContent_"] {
+                max-width: unset !important;
+            }
+            [class*="sessionsButton_"] {
+                max-width: unset !important;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -416,6 +443,43 @@
     }
 
     /**
+     * Process Claude Code chat history list items for RTL
+     * Checks each sessionItem's sessionName content and conditionally applies RTL
+     */
+    function processHistoryList() {
+        // Process session items in the dropdown list
+        const sessionItems = document.querySelectorAll('[class*="sessionItem_"]');
+        sessionItems.forEach(item => {
+            const sessionName = item.querySelector('[class*="sessionName_"]');
+            if (!sessionName) return;
+
+            const text = sessionName.textContent || '';
+            const isRTL = shouldBeRTLText(text);
+
+            if (isRTL) {
+                item.style.textAlign = 'right';
+                sessionName.style.direction = 'rtl';
+            } else {
+                item.style.textAlign = '';
+                sessionName.style.direction = '';
+            }
+        });
+
+        // Process the header button text (current session title)
+        const buttonTexts = document.querySelectorAll('[class*="sessionsButtonText_"]');
+        buttonTexts.forEach(el => {
+            const text = el.textContent || '';
+            if (shouldBeRTLText(text)) {
+                el.style.direction = 'rtl';
+                el.style.textAlign = 'right';
+            } else {
+                el.style.direction = '';
+                el.style.textAlign = '';
+            }
+        });
+    }
+
+    /**
      * Process all chat elements (including Antigravity)
      */
     function processElements() {
@@ -492,6 +556,9 @@
 
         // Also process input boxes
         processInputs();
+
+        // Process chat history list items for RTL
+        processHistoryList();
 
         // Ensure all code blocks are LTR (run after RTL processing)
         ensureCodeBlocksLTR();

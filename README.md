@@ -12,6 +12,7 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 - Works with GitHub Copilot Chat, Claude Code (VS Code, Cursor, Antigravity), Gemini Code Assist, and Antigravity Chat
 - Input box RTL support
 - Agent Questions RTL support — question text, options, and navigation tabs align right in Plan Mode and other agent prompts
+- Conversation History RTL — session titles in the history dropdown align right for RTL content, with a wider and taller dropdown
 - Automatic injection into Claude Code and Gemini Code Assist (no manual setup needed)
 
 ## Preview
@@ -31,6 +32,12 @@ RTL is automatically applied for all RTL texts in: user messages, agent response
 When Claude Code asks you questions (e.g. in Plan Mode), the popup now fully supports RTL — question text, option labels, descriptions, and navigation tabs all align right for Hebrew/RTL content. The free-text "Other" input also switches to RTL automatically.
 
 ![Agent Questions RTL](ReadmeImages/RTLinAgentQuestions.png)
+
+### Conversation History List
+
+Session titles in the chat history dropdown now align right for RTL content. The dropdown is wider and taller, and titles wrap instead of being truncated. The current session title in the header also wraps and grows with content.
+
+![Conversation History RTL](ReadmeImages/RTLingConversationHistoryList.png)
 
 
 ## Installation
@@ -124,6 +131,11 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
+
+### v7.3.0
+- **Conversation History RTL:** Session titles in the history dropdown align right for Hebrew/RTL content
+- **History Dropdown UI:** Wider and taller dropdown, session names wrap instead of being truncated
+- **Session Header Button:** Current session title wraps and grows with content instead of being clipped
 
 ### v7.2.0
 - **Agent Questions RTL:** Question text, option labels, descriptions, and nav tabs in Claude Code's agent prompts (Plan Mode) now align right for Hebrew/RTL content
