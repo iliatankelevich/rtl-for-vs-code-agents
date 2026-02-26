@@ -241,9 +241,18 @@ async function configureCustomCss(context, options = {}) {
         return;
     }
 
-    if (!imports.includes(fileUrl)) {
-        imports.push(fileUrl);
-        await config.update('vscode_custom_css.imports', imports, vscode.ConfigurationTarget.Global);
+    // Remove stale RTL entries (old versions, wrong paths) before adding current one
+    const cleanedImports = imports.filter(url =>
+        typeof url !== 'string' || !url.includes('rtl-for-vs-code-agents') || url === fileUrl
+    );
+
+    if (!cleanedImports.includes(fileUrl)) {
+        cleanedImports.push(fileUrl);
+    }
+
+    const changed = cleanedImports.length !== imports.length || !imports.includes(fileUrl);
+    if (changed) {
+        await config.update('vscode_custom_css.imports', cleanedImports, vscode.ConfigurationTarget.Global);
         if (!quiet) {
             vscode.window.showInformationMessage('Added RTL script to vscode_custom_css.imports. Run “Enable Custom CSS and JS” and restart VS Code.');
         }

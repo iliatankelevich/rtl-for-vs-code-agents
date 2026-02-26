@@ -133,6 +133,9 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v7.5.2
+- **Fix Custom CSS stale imports:** Auto-update no longer accumulates old entries in `vscode_custom_css.imports` — old RTL paths are cleaned up automatically on each configure
+
 ### v7.5.1
 - **Status Bar Quick Menu:** Click the `RTL v7.5.1` button in the status bar to open a quick menu with all extension actions — also triggers an update check in the background
 
