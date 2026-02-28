@@ -492,9 +492,11 @@
             if (isRTL) {
                 item.style.textAlign = 'right';
                 sessionName.style.direction = 'rtl';
+                sessionName.setAttribute('data-rtl-applied', 'true');
             } else {
                 item.style.textAlign = '';
                 sessionName.style.direction = '';
+                sessionName.removeAttribute('data-rtl-applied');
             }
         });
 
@@ -505,9 +507,11 @@
             if (shouldBeRTLText(text)) {
                 el.style.direction = 'rtl';
                 el.style.textAlign = 'right';
+                el.setAttribute('data-rtl-applied', 'true');
             } else {
                 el.style.direction = '';
                 el.style.textAlign = '';
+                el.removeAttribute('data-rtl-applied');
             }
         });
     }

@@ -133,6 +133,9 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v7.5.4
+- **Fix bidi-override on history title:** Session title and history list items now get `data-rtl-applied` marker so the bidi-override CSS fix covers them too
+
 ### v7.5.3
 - **Fix Claude Code bidi-override:** Counter the global `* { unicode-bidi: bidi-override }` rule added in Claude Code v2.1.63 that broke all RTL text rendering
 
