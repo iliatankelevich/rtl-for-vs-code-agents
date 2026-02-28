@@ -193,6 +193,7 @@
     function applyRTL(element) {
         element.style.direction = 'rtl';
         element.style.textAlign = 'right';
+        element.style.unicodeBidi = 'plaintext';
         element.style.fontFamily = CONFIG.fontFamily;
         element.setAttribute('data-rtl-applied', 'true');
 
@@ -250,6 +251,7 @@
     function applyInputRTL(element) {
         element.style.direction = 'rtl';
         element.style.textAlign = 'right';
+        element.style.unicodeBidi = 'plaintext';
         element.style.fontFamily = CONFIG.fontFamily;
         element.setAttribute('data-rtl-input', 'true');
     }
@@ -282,6 +284,24 @@
                 text-align: right !important;
                 unicode-bidi: bidi-override !important;
                 font-family: ${CONFIG.fontFamily} !important;
+            }
+
+            /* Counter Claude Code's * { direction: ltr; unicode-bidi: bidi-override } rule */
+            [data-rtl-applied="true"],
+            [data-rtl-applied="true"] * {
+                unicode-bidi: plaintext !important;
+            }
+            [data-rtl-input="true"] {
+                unicode-bidi: plaintext !important;
+            }
+            /* Maintain code blocks as LTR within RTL containers */
+            [data-rtl-applied="true"] pre,
+            [data-rtl-applied="true"] pre *,
+            [data-rtl-applied="true"] code,
+            [data-rtl-applied="true"] code * {
+                unicode-bidi: embed !important;
+                direction: ltr !important;
+                text-align: left !important;
             }
 
             /* Claude Code Chat History List - unconditional overrides */
@@ -431,6 +451,7 @@
                 el.style.textAlign = 'right';
                 el.style.unicodeBidi = 'plaintext';
                 el.style.fontFamily = CONFIG.fontFamily;
+                el.setAttribute('data-rtl-applied', 'true');
                 if (el.tagName === 'LI') {
                     el.style.listStylePosition = 'inside';
                 }
@@ -449,6 +470,7 @@
                 el.style.textAlign = 'right';
                 el.style.paddingRight = '20px';
                 el.style.paddingLeft = '0';
+                el.setAttribute('data-rtl-applied', 'true');
             }
         });
     }
