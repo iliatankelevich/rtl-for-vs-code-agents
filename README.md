@@ -133,6 +133,9 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v7.5.5
+- **Permission reject input RTL:** The free-text input in permission dialogs (e.g. "Make this edit?") now switches to RTL when typing Hebrew
+
 ### v7.5.4
 - **Fix bidi-override on history title:** Session title and history list items now get `data-rtl-applied` marker so the bidi-override CSS fix covers them too
 

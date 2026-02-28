@@ -57,7 +57,9 @@
             // Copilot input box
             '.view-line',
             // Claude Code - AskUserQuestion "Other" free-text input
-            '[class*="otherInput_"] [contenteditable="plaintext-only"]'
+            '[class*="otherInput_"] [contenteditable="plaintext-only"]',
+            // Claude Code - Permission request reject message input
+            '[class*="rejectMessageInput_"] [contenteditable="plaintext-only"]'
         ],
 
         // How often to check for new content (ms)
