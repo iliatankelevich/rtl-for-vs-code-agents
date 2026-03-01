@@ -351,6 +351,44 @@
             [class*="userMessage_"] {
                 border: 2px solid #f98383 !important;
             }
+
+            /* User message navigation buttons — inline in footer bar */
+            #rtl-msg-nav {
+                display: flex;
+                gap: 2px;
+                align-items: center;
+            }
+            #rtl-msg-nav button {
+                width: 20px;
+                height: 20px;
+                border: none;
+                border-radius: 4px;
+                background: transparent;
+                color: var(--app-secondary-foreground, rgba(255,255,255,0.5));
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                opacity: 0.6;
+                transition: opacity 0.15s, background 0.15s;
+            }
+            #rtl-msg-nav button:hover {
+                opacity: 1;
+                background: rgba(255,255,255,0.08);
+            }
+            #rtl-msg-nav button svg {
+                width: 14px;
+                height: 14px;
+            }
+            @keyframes rtl-nav-highlight {
+                0%   { box-shadow: 0 0 0 0 rgba(249,131,131,0.7); }
+                50%  { box-shadow: 0 0 8px 3px rgba(249,131,131,0.5); }
+                100% { box-shadow: 0 0 0 0 rgba(249,131,131,0); }
+            }
+            .rtl-nav-highlight {
+                animation: rtl-nav-highlight 0.6s ease-out !important;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -429,6 +467,82 @@
                 });
             }
         });
+    }
+
+    /**
+     * User message navigation — track current index
+     */
+    let navCurrentIndex = -1;
+
+    /**
+     * Inject navigation buttons (↑ ↓) above the chat input box
+     */
+    function injectMessageNavigation() {
+        // Already injected
+        if (document.getElementById('rtl-msg-nav')) return;
+
+        // Find the footer bar inside the input area
+        const footer = document.querySelector('[class*="inputFooter_"]');
+        if (!footer) return;
+
+        // Find the addButtonContainer to insert before it
+        const addBtn = footer.querySelector('[class*="addButtonContainer_"]');
+        if (!addBtn) return;
+
+        // Create navigation container
+        const nav = document.createElement('div');
+        nav.id = 'rtl-msg-nav';
+
+        // Up button
+        const upBtn = document.createElement('button');
+        upBtn.title = 'Previous user message (↑)';
+        upBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>';
+        upBtn.addEventListener('click', () => navigateUserMessages(-1));
+
+        // Down button
+        const downBtn = document.createElement('button');
+        downBtn.title = 'Next user message (↓)';
+        downBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>';
+        downBtn.addEventListener('click', () => navigateUserMessages(1));
+
+        nav.appendChild(upBtn);
+        nav.appendChild(downBtn);
+
+        // Insert to the left of the add button
+        footer.insertBefore(nav, addBtn);
+    }
+
+    /**
+     * Navigate to the next/previous user message
+     * @param {number} direction  -1 for up (previous), +1 for down (next)
+     */
+    function navigateUserMessages(direction) {
+        const msgs = Array.from(
+            document.querySelectorAll('[class*="message_"][class*="userMessageContainer_"]')
+        );
+        if (msgs.length === 0) return;
+
+        // Compute next index with cyclic wrap
+        if (navCurrentIndex < 0 || navCurrentIndex >= msgs.length) {
+            // First navigation: start from last if going up, first if going down
+            navCurrentIndex = direction === -1 ? msgs.length - 1 : 0;
+        } else {
+            navCurrentIndex += direction;
+            if (navCurrentIndex < 0) navCurrentIndex = msgs.length - 1;
+            if (navCurrentIndex >= msgs.length) navCurrentIndex = 0;
+        }
+
+        const target = msgs[navCurrentIndex];
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Highlight pulse
+        target.classList.remove('rtl-nav-highlight');
+        // Force reflow to restart animation
+        void target.offsetWidth;
+        target.classList.add('rtl-nav-highlight');
+        target.addEventListener('animationend', () => {
+            target.classList.remove('rtl-nav-highlight');
+        }, { once: true });
     }
 
     /**
@@ -609,6 +723,9 @@
 
         // Ensure all code blocks are LTR (run after RTL processing)
         ensureCodeBlocksLTR();
+
+        // Inject user message navigation buttons above input
+        injectMessageNavigation();
     }
 
     /**
