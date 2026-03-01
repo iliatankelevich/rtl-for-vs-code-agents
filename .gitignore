@@ -9,3 +9,7 @@ image.png
 
 # Local Claude Code settings
 .claude/settings.local.json
+SocialPreview_1280×640px.pdn
+.claude/settings.json
+.claude/skills/release/SKILL.md
+.gitignore

@@ -140,6 +140,10 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v8.0.0
+- **User message navigation (↑↓):** Jump between user messages in Claude Code chat with cyclic up/down buttons in the input footer
+- **Copilot user message borders:** User messages in GitHub Copilot Chat now have a coral accent border matching Claude Code
+
 ### v7.5.6
 - **Broad bidi-override fix:** Cancel Claude Code's `unicode-bidi: bidi-override` across all chat content (tables, lists, headings, etc.) — not just RTL-marked elements
 

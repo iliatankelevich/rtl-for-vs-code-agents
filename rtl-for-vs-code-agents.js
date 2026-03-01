@@ -352,6 +352,13 @@
                 border: 2px solid #f98383 !important;
             }
 
+            /* Copilot / VS Code Chat — user message accent border */
+            .interactive-request .chat-markdown-part {
+                border: 2px solid #f98383 !important;
+                border-radius: 4px;
+                padding: 4px 8px;
+            }
+
             /* User message navigation buttons — inline in footer bar */
             #rtl-msg-nav {
                 display: flex;
@@ -517,14 +524,14 @@
      * @param {number} direction  -1 for up (previous), +1 for down (next)
      */
     function navigateUserMessages(direction) {
-        const msgs = Array.from(
-            document.querySelectorAll('[class*="message_"][class*="userMessageContainer_"]')
-        );
+        // Claude Code — all messages in DOM, use scrollIntoView
+        const msgs = Array.from(document.querySelectorAll(
+            '[class*="message_"][class*="userMessageContainer_"]'
+        ));
         if (msgs.length === 0) return;
 
         // Compute next index with cyclic wrap
         if (navCurrentIndex < 0 || navCurrentIndex >= msgs.length) {
-            // First navigation: start from last if going up, first if going down
             navCurrentIndex = direction === -1 ? msgs.length - 1 : 0;
         } else {
             navCurrentIndex += direction;
@@ -537,7 +544,6 @@
 
         // Highlight pulse
         target.classList.remove('rtl-nav-highlight');
-        // Force reflow to restart animation
         void target.offsetWidth;
         target.classList.add('rtl-nav-highlight');
         target.addEventListener('animationend', () => {
@@ -828,6 +834,7 @@
         setInterval(() => {
             processMonacoInputs(); // Monaco Editor inputs (Copilot) - uses CSS class toggle
             processInputs();       // Other inputs (Claude Code) - uses inline styles
+            injectMessageNavigation(); // Ensure nav buttons exist (handles late DOM)
         }, 200);
 
         console.log('✅ RTL for VS Code Agents: Initialized');
