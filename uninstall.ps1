@@ -200,7 +200,7 @@ Write-Host ""
 
 if ($RestoredCount -gt 0) {
     Write-Host "Next steps:" -ForegroundColor Yellow
-    Write-Host "1. A reload notification will appear in VS Code with a 'Reload Window' button" -ForegroundColor White
+    Write-Host "1. Reload VS Code to apply changes: Ctrl+Shift+P -> Reload Window" -ForegroundColor White
     Write-Host "2. RTL support has been removed" -ForegroundColor White
     Write-Host ""
 }

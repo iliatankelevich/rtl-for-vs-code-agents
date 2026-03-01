@@ -304,9 +304,9 @@ if ($ConfiguredAgents.Count -eq 1) {
 }
 Write-Host "RTL support will now work in $AgentsList!" -ForegroundColor Green
 Write-Host ""
-Write-Host "✓ Installation complete!" -ForegroundColor Green
-Write-Host "A reload notification will appear in VS Code with a 'Reload Window' button." -ForegroundColor Cyan
+Write-Host "Installation complete!" -ForegroundColor Green
+Write-Host "Reload VS Code to apply changes: Ctrl+Shift+P -> Reload Window" -ForegroundColor Cyan
 Write-Host ""
 
-Write-Host "Press any key to exit..."
+Write-Host "Press any key to exit..." -ForegroundColor Cyan
 $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')

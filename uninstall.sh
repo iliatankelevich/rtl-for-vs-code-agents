@@ -218,7 +218,7 @@ echo ""
 
 if [ $RESTORED_COUNT -gt 0 ]; then
     echo "Next steps:"
-    echo "1. A reload notification will appear in VS Code with a 'Reload Window' button"
+    echo "1. Reload VS Code to apply changes: Ctrl+Shift+P -> Reload Window"
     echo "2. RTL support has been removed"
     echo ""
 fi
