@@ -309,4 +309,4 @@ Write-Host "A reload notification will appear in VS Code with a 'Reload Window' 
 Write-Host ""
 
 Write-Host "Press any key to exit..."
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
