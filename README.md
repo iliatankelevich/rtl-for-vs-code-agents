@@ -7,6 +7,11 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 ## Features
 
+### NEW
+- **User message navigation (↑↓)** — jump between user messages in Claude Code with cyclic up/down buttons in the input footer
+- **User message accent borders** — coral border on user messages in Claude Code and Copilot Chat
+
+### Core
 - Automatic RTL detection for Hebrew, Arabic, Persian, Urdu, and more
 - Code blocks remain LTR
 - Works with GitHub Copilot Chat, Claude Code (VS Code, Cursor, Antigravity), Gemini Code Assist, and Antigravity Chat
