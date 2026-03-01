@@ -9,15 +9,21 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 ### NEW
 - **User message navigation (↑↓)** — jump between user messages in Claude Code with cyclic up/down buttons in the input footer
-- **User message accent borders** — coral border on user messages in Claude Code and Copilot Chat
+![Check for updates](ReadmeImages/UserMessageNavigation.png)
 
-### Core
-- Automatic RTL detection for Hebrew, Arabic, Persian, Urdu, and more
+- **User message accent borders** — coral border on user messages in Claude Code and Copilot Chat
+- **Check for updates** - Any RTL issues? Click the RTL status bar button to check for updates! Also - The extension checks for updates every time you restart VS CODE.
+![Check for updates](ReadmeImages/CheckForUpdates.png)
+
+- **Conversation History RTL** — session titles in the history dropdown align right for RTL content, with a wider and taller dropdown
+
+- **Agent Questions RTL support** — question text, options, and navigation tabs align right in Plan Mode and other agent prompts
+
+### Core Features
+- **Automatic RTL** — detects RTL textion for Hebrew, Arabic, Persian, Urdu, and more
 - Code blocks remain LTR
+- **Input box RTL support**
 - Works with GitHub Copilot Chat, Claude Code (VS Code, Cursor, Antigravity), Gemini Code Assist, and Antigravity Chat
-- Input box RTL support
-- Agent Questions RTL support — question text, options, and navigation tabs align right in Plan Mode and other agent prompts
-- Conversation History RTL — session titles in the history dropdown align right for RTL content, with a wider and taller dropdown
 - Automatic injection into Claude Code and Gemini Code Assist (no manual setup needed)
 
 ## Preview
