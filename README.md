@@ -39,6 +39,13 @@ Session titles in the chat history dropdown now align right for RTL content. The
 
 ![Conversation History RTL](ReadmeImages/RTLingConversationHistoryList.png)
 
+### Check for updates
+
+Any RTL issues? Click the RTL status bar button to check for updates!
+Also - The extension checks for updates every time you restart VS CODE.
+
+![Check for updates](ReadmeImages/CheckForUpdates.png)
+
 
 ## Installation
 
