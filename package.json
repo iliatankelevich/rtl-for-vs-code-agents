@@ -2,7 +2,7 @@
   "name": "rtl-for-vs-code-agents",
   "displayName": "RTL for VS Code Agents",
   "description": "Right-to-left (RTL) support for AI chat agents, with automatic Claude Code injection.",
-  "version": "7.5.5",
+  "version": "7.5.6",
   "publisher": "local",
   "license": "GPL-3.0",
   "repository": {

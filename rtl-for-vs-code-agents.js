@@ -288,7 +288,15 @@
                 font-family: ${CONFIG.fontFamily} !important;
             }
 
-            /* Counter Claude Code's * { direction: ltr; unicode-bidi: bidi-override } rule */
+            /* Counter Claude Code's * { direction: ltr; unicode-bidi: bidi-override } rule —
+               apply broadly to all chat content, not just RTL-marked elements */
+            [class*="message_"] *,
+            [class*="timelineMessage_"] *,
+            [class*="root_"] *,
+            .rendered-markdown *,
+            [class*="questionTextLarge_"] *,
+            [class*="optionLabel_"] *,
+            [class*="optionDescription_"] *,
             [data-rtl-applied="true"],
             [data-rtl-applied="true"] * {
                 unicode-bidi: plaintext !important;
