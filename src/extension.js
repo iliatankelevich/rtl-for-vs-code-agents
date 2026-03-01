@@ -148,14 +148,21 @@ function showPostInjectNotice(targets) {
     const includesWebviewExtension = targets.some(t => t.type === 'claude-extension' || t.type === 'gemini-extension');
 
     let message = 'RTL: injection successful.';
+    let buttons = [];
+
     if (includesWebviewExtension) {
-        message += ' Reload required: Ctrl+Shift+P → "Reload Window".';
+        message += ' Reload required to apply changes.';
+        buttons.push('Reload Window');
     }
     if (includesAntigravity) {
         message += ' Antigravity: restart the app.';
     }
 
-    vscode.window.showInformationMessage(message);
+    vscode.window.showInformationMessage(message, ...buttons).then(choice => {
+        if (choice === 'Reload Window') {
+            vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }
+    });
 }
 
 async function checkAndInject(context, options = {}) {
@@ -420,7 +427,13 @@ async function removeAllInjections(context) {
     await context.globalState.update('rtlForVsCodeAgents.injectedPaths', []);
 
     if (restored > 0) {
-        vscode.window.showInformationMessage(`RTL: restored ${restored} file(s) to original. Reload VS Code to apply.`);
+        const reload = 'Reload Window';
+        const message = `RTL: restored ${restored} file(s) to original. Reload required to apply.`;
+        vscode.window.showInformationMessage(message, reload).then(choice => {
+            if (choice === reload) {
+                vscode.commands.executeCommand('workbench.action.reloadWindow');
+            }
+        });
     } else {
         vscode.window.showInformationMessage('RTL: no injections found to remove.');
     }
