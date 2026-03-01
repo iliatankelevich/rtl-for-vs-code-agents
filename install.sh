@@ -442,21 +442,8 @@ fi
 echo "RTL support will now work in $AGENTS_LIST!"
 echo ""
 
-# Ask if user wants to restart VS Code
-read -p "Do you want to restart VS Code now? (y/n): " RESTART_VSCODE
-
-if [[ "$RESTART_VSCODE" =~ ^[Yy]$ ]]; then
-    echo "Restarting VS Code..."
-    # Kill VS Code
-    pkill -f "Visual Studio Code" 2>/dev/null || pkill -f "code" 2>/dev/null
-    sleep 2
-    # Start VS Code
-    if command -v code &> /dev/null; then
-        code &
-    else
-        echo "VS Code command not found. Please start it manually."
-    fi
-fi
-
+echo ""
+echo "✓ Installation complete!"
+echo "A reload notification will appear in VS Code with a 'Reload Window' button."
 echo ""
 echo "Installation script completed!"

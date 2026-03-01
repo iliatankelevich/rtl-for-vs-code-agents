@@ -200,18 +200,9 @@ Write-Host ""
 
 if ($RestoredCount -gt 0) {
     Write-Host "Next steps:" -ForegroundColor Yellow
-    Write-Host "1. Restart VS Code and Antigravity" -ForegroundColor White
+    Write-Host "1. A reload notification will appear in VS Code with a 'Reload Window' button" -ForegroundColor White
     Write-Host "2. RTL support has been removed" -ForegroundColor White
     Write-Host ""
-
-    # Ask if user wants to restart
-    $Restart = Read-Host "Do you want to restart VS Code now? (y/n)"
-    if ($Restart -eq 'y' -or $Restart -eq 'Y') {
-        Write-Host "Restarting VS Code..." -ForegroundColor Cyan
-        Get-Process -Name "Code" -ErrorAction SilentlyContinue | Stop-Process -Force
-        Start-Sleep -Seconds 2
-        Start-Process "code"
-    }
 }
 
 Write-Host ""

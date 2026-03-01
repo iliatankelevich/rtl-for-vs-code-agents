@@ -218,21 +218,9 @@ echo ""
 
 if [ $RESTORED_COUNT -gt 0 ]; then
     echo "Next steps:"
-    echo "1. Restart VS Code and Antigravity"
+    echo "1. A reload notification will appear in VS Code with a 'Reload Window' button"
     echo "2. RTL support has been removed"
     echo ""
-
-    read -p "Do you want to restart VS Code now? (y/n): " RESTART_VSCODE
-    if [[ "$RESTART_VSCODE" =~ ^[Yy]$ ]]; then
-        echo "Restarting VS Code..."
-        pkill -f "Visual Studio Code" 2>/dev/null || pkill -f "code" 2>/dev/null
-        sleep 2
-        if command -v code &> /dev/null; then
-            code &
-        else
-            echo "VS Code command not found. Please start it manually."
-        fi
-    fi
 fi
 
 echo ""

@@ -154,6 +154,8 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 ### v8.0.0
 - **User message navigation (↑↓):** Jump between user messages in Claude Code chat with cyclic up/down buttons in the input footer
 - **Copilot user message borders:** User messages in GitHub Copilot Chat now have a coral accent border matching Claude Code
+- **Improve reload notifications:** Add 'Reload Window' button to all injections and removals — soft reload instead of manual Ctrl+Shift+P
+- **Install/Uninstall scripts:** No longer force-restart VS Code — reload happens via extension notification button
 
 ### v7.5.6
 - **Broad bidi-override fix:** Cancel Claude Code's `unicode-bidi: bidi-override` across all chat content (tables, lists, headings, etc.) — not just RTL-marked elements

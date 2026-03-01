@@ -304,18 +304,9 @@ if ($ConfiguredAgents.Count -eq 1) {
 }
 Write-Host "RTL support will now work in $AgentsList!" -ForegroundColor Green
 Write-Host ""
-
-# Ask if user wants to open VS Code now
-$OpenVSCode = Read-Host "Do you want to restart VS Code now? (y/n)"
-if ($OpenVSCode -eq 'y' -or $OpenVSCode -eq 'Y') {
-    Write-Host "Restarting VS Code..." -ForegroundColor Cyan
-    # Close VS Code if running
-    Get-Process -Name "Code" -ErrorAction SilentlyContinue | Stop-Process -Force
-    Start-Sleep -Seconds 2
-    # Start VS Code
-    Start-Process "code"
-}
-
+Write-Host "✓ Installation complete!" -ForegroundColor Green
+Write-Host "A reload notification will appear in VS Code with a 'Reload Window' button." -ForegroundColor Cyan
 Write-Host ""
+
 Write-Host "Press any key to exit..."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
