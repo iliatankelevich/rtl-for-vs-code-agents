@@ -190,12 +190,24 @@
     }
 
     /**
+     * Inject an RLM (Right-to-Left Mark) character at the start of an element
+     * to anchor BiDi direction when the first child is an inline element with LTR text
+     */
+    function injectRLM(el) {
+        const RLM = '\u200F';
+        const first = el.firstChild;
+        // Already injected?
+        if (first && first.nodeType === Node.TEXT_NODE && first.textContent.startsWith(RLM)) return;
+        el.insertBefore(document.createTextNode(RLM), first);
+    }
+
+    /**
      * Apply RTL styling to an element
      */
     function applyRTL(element) {
         element.style.direction = 'rtl';
         element.style.textAlign = 'right';
-        element.style.unicodeBidi = 'plaintext';
+        element.style.unicodeBidi = 'isolate';
         element.style.fontFamily = CONFIG.fontFamily;
         element.setAttribute('data-rtl-applied', 'true');
 
@@ -212,10 +224,13 @@
             if (shouldBeRTLText(el.textContent)) {
                 el.style.direction = 'rtl';
                 el.style.textAlign = 'right';
-                el.style.unicodeBidi = 'plaintext';
+                el.style.unicodeBidi = 'isolate';
                 if (el.tagName === 'LI') {
                     el.style.listStylePosition = 'inside';
                 }
+                // Inject RLM (Right-to-Left Mark) at the start to anchor BiDi direction
+                // when the first visible child is an inline element with LTR content
+                injectRLM(el);
             }
         });
 
@@ -579,12 +594,13 @@
             if (shouldBeRTLText(el.textContent)) {
                 el.style.direction = 'rtl';
                 el.style.textAlign = 'right';
-                el.style.unicodeBidi = 'plaintext';
+                el.style.unicodeBidi = 'isolate';
                 el.style.fontFamily = CONFIG.fontFamily;
                 el.setAttribute('data-rtl-applied', 'true');
                 if (el.tagName === 'LI') {
                     el.style.listStylePosition = 'inside';
                 }
+                injectRLM(el);
             }
         });
 
