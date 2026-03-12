@@ -110,6 +110,12 @@ function needsInjection(indexPath) {
     return !isInjected(content);
 }
 
+function buildConfigBlock() {
+    const config = getConfig();
+    const yoloSeconds = Number(config.get('yoloCountdownSeconds', 5)) || 0;
+    return `window.__RTL_CONFIG__ = ${JSON.stringify({ yoloDelayMs: yoloSeconds * 1000 })};`;
+}
+
 function injectScript(indexPath, scriptContent) {
     const original = fs.readFileSync(indexPath, 'utf8');
     if (isInjected(original)) {
@@ -118,7 +124,8 @@ function injectScript(indexPath, scriptContent) {
 
     ensureBackup(indexPath);
 
-    const appended = `${original}\n\n// ${MARKER} (injected)\n${scriptContent}\n`;
+    const configBlock = buildConfigBlock();
+    const appended = `${original}\n\n// ${MARKER} (injected)\n${configBlock}\n${scriptContent}\n`;
     fs.writeFileSync(indexPath, appended, 'utf8');
     return { changed: true, reason: 'injected' };
 }
@@ -414,6 +421,30 @@ function restoreAllBackups() {
     return restored;
 }
 
+function reinjectAll(extensionPath) {
+    const scriptContent = getScriptContent(extensionPath);
+    const configBlock = buildConfigBlock();
+    const installations = listExtensionInstallations();
+    const antigravityApp = getAntigravityAppInstallation();
+    const targets = antigravityApp ? [...installations, antigravityApp] : installations;
+    let count = 0;
+
+    for (const target of targets) {
+        if (!fs.existsSync(target.indexPath)) continue;
+        const content = fs.readFileSync(target.indexPath, 'utf8');
+        if (!isInjected(content)) continue;
+
+        // Strip old injection, re-append with new config
+        const mi = content.indexOf('// ' + MARKER);
+        if (mi <= 0) continue;
+        const clean = content.substring(0, mi).trimEnd();
+        const output = `${clean}\n\n// ${MARKER} (injected)\n${configBlock}\n${scriptContent}\n`;
+        fs.writeFileSync(target.indexPath, output, 'utf8');
+        count++;
+    }
+    return count;
+}
+
 async function removeAllInjections(context) {
     const yes = 'Remove All';
     const no = 'Cancel';
@@ -651,6 +682,26 @@ async function activate(context) {
             const picked = await vscode.window.showQuickPick(items, { placeHolder: 'RTL for VS Code Agents' });
             if (picked) {
                 await vscode.commands.executeCommand(picked.command);
+            }
+        })
+    );
+
+    // Re-inject when YOLO countdown setting changes, then offer Reload
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('rtlForVsCodeAgents.yoloCountdownSeconds')) {
+                const updated = reinjectAll(context.extensionPath);
+                if (updated > 0) {
+                    const secs = getConfig().get('yoloCountdownSeconds', 5);
+                    vscode.window.showInformationMessage(
+                        `YOLO countdown updated to ${secs}s. Reload required to apply.`,
+                        'Reload Window'
+                    ).then(choice => {
+                        if (choice === 'Reload Window') {
+                            vscode.commands.executeCommand('workbench.action.reloadWindow');
+                        }
+                    });
+                }
             }
         })
     );

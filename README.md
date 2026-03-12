@@ -8,8 +8,11 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 ## Features
 
 ### NEW
+- **YOLO Mode 💪 (auto-approve with countdown)** — toggle YOLO mode to auto-approve all tool calls. A progress bar counts down before each approval, with a **NO!** button to cancel. Right-click the 💪 button to set the countdown delay (0 = instant, no progress bar). The setting is persistent across sessions.
+![YOLO Mode](ReadmeImages/YoloModeButton.png)
+
 - **User message navigation (↑↓)** — jump between user messages in Claude Code with cyclic up/down buttons in the input footer
-![Check for updates](ReadmeImages/UserMessageNavigation.png)
+![User message navigation](ReadmeImages/UserMessageNavigation.png)
 
 - **User message accent borders** — coral border on user messages in Claude Code and Copilot Chat
 - **Check for updates** - Any RTL issues? Click the RTL status bar button to check for updates! Also - The extension checks for updates every time you restart VS CODE.
@@ -84,9 +87,13 @@ Copilot Chat requires the [Custom CSS and JS Loader](https://marketplace.visuals
 ## And what about RTL for web chats!?
 ### (i.e. Claude.ai / NotebookLM / Perplexity / ChatGPT) and SaaSs (i.e. Slack / Monday / Heptabse)
 ### I've got you there also!!
-[![Multi-RTL Chrome Extension](ReadmeImages/Multi-RTL-Chrome.png)](https://multi-rtl.interact-ed.online)
+[![Multi-RTL Chrome Extension](ReadmeImages/Multi-RTL-Chrome.png)](https://multi-rtl.asia-digital.online)
 
 is all you need!
+
+### Check it out: [https://multi-rtl.asia-digital.online](https://multi-rtl.asia-digital.online)
+
+
 
 
 
@@ -111,6 +118,7 @@ is all you need!
 | `rtlForVsCodeAgents.autoConfigureCustomCss` | `false` | Automatically configure Custom CSS Loader |
 | `rtlForVsCodeAgents.autoCheckUpdates` | `true` | Automatically check for extension updates from GitHub on startup |
 | `rtlForVsCodeAgents.updateCheckIntervalHours` | `24` | How often to check for updates (0 = startup only) |
+| `rtlForVsCodeAgents.yoloCountdownSeconds` | `5` | YOLO mode countdown before auto-approve (0 = instant). Easier to change via right-click on the 💪 button |
 </details>
 
 <details>
@@ -150,6 +158,10 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 </details>
 <details>
 <summary>Changelog</summary>
+
+### v8.1.0
+- **YOLO Mode 💪 (auto-approve with countdown):** Toggle YOLO mode with the 💪 button to auto-approve all tool calls. A countdown progress bar with a **NO!** cancel button appears before each approval. Right-click the button to adjust the delay (0 = instant). Setting is persistent via localStorage.
+- **YOLO countdown settings:** Configurable via VS Code Settings (`yoloCountdownSeconds`) or right-click on the 💪 button (instant, no reload needed)
 
 ### v8.0.1
 - **Fix BiDi ordering in mixed Hebrew/English lines:** Lines starting with bold text followed by English in parentheses (e.g. `**term** (English explanation)`) now correctly align RTL. Fixed by injecting RLM anchors and switching from `unicode-bidi: plaintext` to `isolate`.
@@ -247,6 +259,10 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 - Initial release with GitHub Copilot Chat support
 
 </details>
+
+## Credits
+
+The **YOLO Mode** feature (auto-approve with countdown) is based on the original idea and JavaScript snippet by [Chris Le](https://github.com/chrisle) — see the [original gist](https://gist.github.com/chrisle/c6f187278e27f0168d982cd84de08b92).
 
 ## License
 

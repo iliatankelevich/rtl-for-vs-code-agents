@@ -411,6 +411,102 @@
             .rtl-nav-highlight {
                 animation: rtl-nav-highlight 0.6s ease-out !important;
             }
+
+            /* YOLO mode toggle button */
+            #rtl-yolo-btn {
+                font-size: 13px;
+                line-height: 1;
+                filter: grayscale(1);
+                transition: filter 0.2s, transform 0.15s;
+            }
+            #rtl-yolo-btn.yolo-active {
+                filter: grayscale(0);
+                transform: scale(1.15);
+            }
+            @keyframes yolo-pulse {
+                0%, 100% { filter: grayscale(0); transform: scale(1.15); }
+                50%      { filter: grayscale(0); transform: scale(1.3); }
+            }
+            #rtl-yolo-btn.yolo-active {
+                animation: yolo-pulse 1.5s ease-in-out infinite;
+            }
+            /* YOLO countdown overlay */
+            .yolo-countdown {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 8px;
+                background: rgba(30, 30, 30, 0.92);
+                border: 1px solid rgba(249, 131, 131, 0.5);
+                border-radius: 6px;
+                position: fixed;
+                bottom: 60px;
+                right: 16px;
+                z-index: 99999;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+                font-family: system-ui, sans-serif;
+                font-size: 12px;
+                color: rgba(255,255,255,0.85);
+            }
+            .yolo-countdown-bar-track {
+                width: 120px;
+                height: 6px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 3px;
+                overflow: hidden;
+            }
+            .yolo-countdown-bar-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #f98383, #ff6b6b);
+                border-radius: 3px;
+                transition: width 0.1s linear;
+            }
+            .yolo-countdown-no {
+                background: #d32f2f;
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                padding: 2px 8px;
+                font-size: 11px;
+                font-weight: 700;
+                cursor: pointer;
+                white-space: nowrap;
+            }
+            .yolo-countdown-no:hover {
+                background: #b71c1c;
+            }
+
+            /* YOLO settings popup (right-click on 💪) */
+            .yolo-settings-popup {
+                position: fixed;
+                z-index: 100000;
+                background: var(--vscode-menu-background, #252526);
+                border: 1px solid var(--vscode-menu-border, #454545);
+                border-radius: 6px;
+                padding: 8px 10px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+                font-family: system-ui, sans-serif;
+                font-size: 12px;
+                color: var(--vscode-menu-foreground, rgba(255,255,255,0.85));
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                white-space: nowrap;
+            }
+            .yolo-settings-popup input[type="number"] {
+                width: 48px;
+                padding: 2px 4px;
+                border: 1px solid var(--vscode-input-border, #3c3c3c);
+                border-radius: 3px;
+                background: var(--vscode-input-background, #1e1e1e);
+                color: var(--vscode-input-foreground, #ccc);
+                font-size: 12px;
+                text-align: center;
+            }
+            .yolo-settings-popup .yolo-settings-hint {
+                opacity: 0.55;
+                font-size: 10px;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -496,6 +592,277 @@
      */
     let navCurrentIndex = -1;
 
+    // ─── YOLO Mode (auto-approve with countdown) ──────────────────
+    let yoloPollId = null;
+    let yoloRunning = false;
+    let yoloCountdownActive = false;  // true while a countdown is in progress
+    let yoloCancelledBtn = null;      // ref to the button the user cancelled — skip until it leaves DOM
+    let yoloCountdownCancel = null;   // cancel function for active countdown
+    const YOLO_LS_KEY = 'rtl-yolo-delay-ms';
+    const YOLO_POLL_MS = 500;
+
+    // Seed localStorage from injected config (only if not already set by user)
+    if (localStorage.getItem(YOLO_LS_KEY) === null) {
+        const seed = (window.__RTL_CONFIG__ && typeof window.__RTL_CONFIG__.yoloDelayMs === 'number')
+            ? window.__RTL_CONFIG__.yoloDelayMs : 5000;
+        localStorage.setItem(YOLO_LS_KEY, String(seed));
+    }
+
+    /** Read YOLO delay dynamically — changes take effect on next poll without reload */
+    function getYoloDelayMs() {
+        const v = parseInt(localStorage.getItem(YOLO_LS_KEY), 10);
+        return isNaN(v) ? 5000 : v;
+    }
+    function setYoloDelayMs(ms) {
+        localStorage.setItem(YOLO_LS_KEY, String(Math.max(0, ms)));
+    }
+
+    function findYesButton(doc) {
+        if (!doc) return null;
+        const buttons = doc.querySelectorAll('button');
+
+        // Strategy 1: button with "Yes" text and a span containing "1"
+        for (const button of buttons) {
+            const text = button.textContent?.trim() || '';
+            if (text.includes('Yes')) {
+                const span = button.querySelector('span');
+                if (span && span.textContent?.trim() === '1') {
+                    return button;
+                }
+            }
+        }
+
+        // Strategy 2: exact text patterns
+        for (const button of buttons) {
+            const text = button.textContent?.trim() || '';
+            if (text === '1 Yes' || text === 'Yes 1' || text === '1Yes') {
+                return button;
+            }
+        }
+
+        // Strategy 3: any button with "Yes" and a digit
+        for (const button of buttons) {
+            const text = button.textContent?.trim() || '';
+            if (text.includes('Yes') && /\d/.test(text)) {
+                return button;
+            }
+        }
+
+        // Recursively check iframes
+        const iframes = doc.querySelectorAll('iframe');
+        for (const iframe of iframes) {
+            try {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                if (iframeDoc) {
+                    const found = findYesButton(iframeDoc);
+                    if (found) return found;
+                }
+            } catch (e) { /* cross-origin */ }
+        }
+        return null;
+    }
+
+    /**
+     * Show a countdown overlay, then click the button.
+     * Returns a cancel function. If the user cancels (NO!) the button is NOT clicked.
+     */
+    function showCountdown(targetButton) {
+        yoloCountdownActive = true;
+
+        // Build overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'yolo-countdown';
+
+        const label = document.createElement('span');
+        label.textContent = '💪 YOLO';
+
+        const track = document.createElement('div');
+        track.className = 'yolo-countdown-bar-track';
+        const fill = document.createElement('div');
+        fill.className = 'yolo-countdown-bar-fill';
+        fill.style.width = '100%';
+        track.appendChild(fill);
+
+        const timer = document.createElement('span');
+        timer.style.minWidth = '28px';
+        timer.style.textAlign = 'center';
+
+        const noBtn = document.createElement('button');
+        noBtn.className = 'yolo-countdown-no';
+        noBtn.textContent = 'NO!';
+
+        overlay.appendChild(label);
+        overlay.appendChild(track);
+        overlay.appendChild(timer);
+        overlay.appendChild(noBtn);
+        document.body.appendChild(overlay);
+
+        const delayMs = getYoloDelayMs(); // snapshot once per countdown
+        const startTime = Date.now();
+        let cancelled = false;
+        let animFrame;
+
+        function tick() {
+            // If the Yes button disappeared (user clicked YES manually), cancel silently
+            if (!targetButton.isConnected && !cancelled) {
+                cleanup();
+                console.log('YOLO: Yes button gone (manual click?) — countdown dismissed');
+                return;
+            }
+
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, delayMs - elapsed);
+            const pct = (remaining / delayMs) * 100;
+            fill.style.width = pct + '%';
+            timer.textContent = (remaining / 1000).toFixed(1) + 's';
+
+            if (remaining <= 0 && !cancelled) {
+                cleanup();
+                if (targetButton.isConnected) {
+                    console.log('YOLO: auto-clicking Yes');
+                    targetButton.click();
+                }
+                return;
+            }
+            animFrame = requestAnimationFrame(tick);
+        }
+
+        function cleanup() {
+            yoloCountdownActive = false;
+            yoloCountdownCancel = null;
+            cancelAnimationFrame(animFrame);
+            overlay.remove();
+        }
+
+        function cancel() {
+            cancelled = true;
+            // Remember this button so poll skips it until it leaves the DOM
+            yoloCancelledBtn = targetButton;
+            cleanup();
+            console.log('YOLO: cancelled by user');
+        }
+
+        noBtn.addEventListener('click', (e) => { e.stopPropagation(); cancel(); });
+        animFrame = requestAnimationFrame(tick);
+
+        yoloCountdownCancel = cancel;
+        return cancel;
+    }
+
+    /** Poll for Yes buttons; when found start a countdown instead of clicking immediately */
+    function yoloPoll() {
+        if (yoloCountdownActive) return; // countdown in progress, skip
+
+        // Clear cancelled-button ref once it leaves the DOM
+        if (yoloCancelledBtn && !yoloCancelledBtn.isConnected) {
+            yoloCancelledBtn = null;
+        }
+
+        const btn = findYesButton(document);
+        if (btn) {
+            // Skip if this is the same button the user already cancelled
+            if (btn === yoloCancelledBtn) return;
+
+            // 0 delay = instant approve, no progress bar
+            if (getYoloDelayMs() <= 0) {
+                console.log('YOLO: instant auto-clicking Yes');
+                btn.click();
+                return;
+            }
+
+            showCountdown(btn);
+        }
+    }
+
+    function startYolo() {
+        if (yoloRunning) return;
+        yoloRunning = true;
+        yoloPoll();
+        yoloPollId = setInterval(yoloPoll, YOLO_POLL_MS);
+        console.log('💪 YOLO mode ON');
+    }
+
+    function stopYolo() {
+        if (!yoloRunning) return;
+        yoloRunning = false;
+        if (yoloPollId) { clearInterval(yoloPollId); yoloPollId = null; }
+        // Remove any active countdown overlay
+        const overlay = document.querySelector('.yolo-countdown');
+        if (overlay) overlay.remove();
+        yoloCountdownActive = false;
+        console.log('💪 YOLO mode OFF');
+    }
+
+    function toggleYolo() {
+        yoloRunning ? stopYolo() : startYolo();
+        // Update button visual
+        const btn = document.getElementById('rtl-yolo-btn');
+        if (btn) btn.classList.toggle('yolo-active', yoloRunning);
+        return yoloRunning;
+    }
+    // ────────────────────────────────────────────────────────────────
+
+    /**
+     * Show a small settings popup near the YOLO button (right-click)
+     */
+    function showYoloSettings(e) {
+        // Remove any existing popup
+        const existing = document.querySelector('.yolo-settings-popup');
+        if (existing) { existing.remove(); return; }
+
+        const popup = document.createElement('div');
+        popup.className = 'yolo-settings-popup';
+
+        const lbl = document.createElement('span');
+        lbl.textContent = '⏱ Delay:';
+
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.max = '30';
+        input.step = '1';
+        input.value = String(getYoloDelayMs() / 1000);
+
+        const unit = document.createElement('span');
+        unit.textContent = 'sec';
+
+        const hint = document.createElement('span');
+        hint.className = 'yolo-settings-hint';
+        hint.textContent = '(0 = instant)';
+
+        popup.appendChild(lbl);
+        popup.appendChild(input);
+        popup.appendChild(unit);
+        popup.appendChild(hint);
+
+        // Position near the button
+        popup.style.bottom = '40px';
+        popup.style.right = '16px';
+        document.body.appendChild(popup);
+
+        // Save on change
+        input.addEventListener('input', () => {
+            const secs = parseFloat(input.value);
+            if (!isNaN(secs) && secs >= 0) {
+                setYoloDelayMs(Math.round(secs * 1000));
+            }
+        });
+
+        // Close on outside click
+        function onOutsideClick(ev) {
+            if (!popup.contains(ev.target)) {
+                popup.remove();
+                document.removeEventListener('mousedown', onOutsideClick, true);
+            }
+        }
+        // Delay listener so the current contextmenu event doesn't close it immediately
+        setTimeout(() => document.addEventListener('mousedown', onOutsideClick, true), 0);
+
+        // Focus the input
+        input.focus();
+        input.select();
+    }
+
     /**
      * Inject navigation buttons (↑ ↓) above the chat input box
      */
@@ -514,21 +881,33 @@
         // Create navigation container
         const nav = document.createElement('div');
         nav.id = 'rtl-msg-nav';
+        // Prevent clicks from bubbling into the chat input area
+        nav.addEventListener('mousedown', (e) => e.preventDefault());
 
         // Up button
         const upBtn = document.createElement('button');
         upBtn.title = 'Previous user message (↑)';
         upBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>';
-        upBtn.addEventListener('click', () => navigateUserMessages(-1));
+        upBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); navigateUserMessages(-1); });
 
         // Down button
         const downBtn = document.createElement('button');
         downBtn.title = 'Next user message (↓)';
         downBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>';
-        downBtn.addEventListener('click', () => navigateUserMessages(1));
+        downBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); navigateUserMessages(1); });
+
+        // YOLO mode toggle button
+        const yoloBtn = document.createElement('button');
+        yoloBtn.id = 'rtl-yolo-btn';
+        yoloBtn.title = 'YOLO mode: auto-approve all tool calls';
+        yoloBtn.textContent = '💪';
+        if (yoloRunning) yoloBtn.classList.add('yolo-active');
+        yoloBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); toggleYolo(); });
+        yoloBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showYoloSettings(e); });
 
         nav.appendChild(upBtn);
         nav.appendChild(downBtn);
+        nav.appendChild(yoloBtn);
 
         // Insert to the left of the add button
         footer.insertBefore(nav, addBtn);
@@ -868,6 +1247,11 @@
         processElements();
         console.log('✅ RTL for VS Code Agents: Refreshed');
     };
+
+    // Expose YOLO mode toggle and settings
+    window.toggleYOLO = toggleYolo;
+    window.setYoloDelay = function(secs) { setYoloDelayMs(Math.round(secs * 1000)); console.log('YOLO delay set to ' + secs + 's'); };
+    window.getYoloDelay = function() { return getYoloDelayMs() / 1000; };
 
     // Expose function to check RTL status
     window.checkRTL = function(text) {

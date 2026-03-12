@@ -2,7 +2,7 @@
   "name": "rtl-for-vs-code-agents",
   "displayName": "RTL for VS Code Agents",
   "description": "Right-to-left (RTL) support for AI chat agents, with automatic Claude Code injection.",
-  "version": "8.0.1",
+  "version": "8.1.0",
   "publisher": "local",
   "license": "GPL-3.0",
   "repository": {
@@ -54,6 +54,13 @@
           "type": "boolean",
           "default": false,
           "description": "Automatically configure Custom CSS and JS Loader to load the RTL script."
+        },
+        "rtlForVsCodeAgents.yoloCountdownSeconds": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "maximum": 30,
+          "markdownDescription": "YOLO mode countdown duration (seconds) before auto-approving tool calls.\n\n**0 = instant** (no progress bar).\n\n**Tip:** It's easier to change this by right-clicking the 💪 button directly — changes are instant and persistent (no reload needed). This setting is only used as the initial default on first install."
         },
         "rtlForVsCodeAgents.autoCheckUpdates": {
           "type": "boolean",
