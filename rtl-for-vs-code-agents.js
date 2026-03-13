@@ -367,6 +367,26 @@
 
             /* Copilot / VS Code Chat — user message accent border (also dynamic) */
 
+            /* Bright scrollbar for chat panel */
+            * {
+                scrollbar-color: rgba(255, 255, 255, 0.45) transparent !important;
+                scrollbar-width: auto !important;
+            }
+            ::-webkit-scrollbar {
+                width: 10px !important;
+                height: 10px !important;
+            }
+            ::-webkit-scrollbar-track {
+                background: transparent !important;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.45) !important;
+                border-radius: 5px !important;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: rgba(255, 255, 255, 0.7) !important;
+            }
+
             /* User message navigation buttons — inline in footer bar */
             #rtl-msg-nav {
                 display: flex;
