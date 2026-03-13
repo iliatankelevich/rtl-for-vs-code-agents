@@ -2,7 +2,7 @@
   "name": "rtl-for-vs-code-agents",
   "displayName": "RTL for VS Code Agents",
   "description": "Right-to-left (RTL) support for AI chat agents, with automatic Claude Code injection.",
-  "version": "8.1.0",
+  "version": "8.2.0",
   "publisher": "local",
   "license": "GPL-3.0",
   "repository": {
@@ -54,6 +54,11 @@
           "type": "boolean",
           "default": false,
           "description": "Automatically configure Custom CSS and JS Loader to load the RTL script."
+        },
+        "rtlForVsCodeAgents.userMessageBorder": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Show a colored border around user messages for easy identification.\n\n**Tip:** It's easier to toggle this by right-clicking the ↑↓ navigation buttons — changes are instant (no reload needed). This setting is only used as the initial default on first install."
         },
         "rtlForVsCodeAgents.yoloCountdownSeconds": {
           "type": "number",

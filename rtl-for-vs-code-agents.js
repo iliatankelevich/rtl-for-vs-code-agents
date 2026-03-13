@@ -363,16 +363,9 @@
             [class*="header_"]:has([class*="sessionsButton_"]) {
                 border: 2px solid #c8a2f8 !important;
             }
-            [class*="userMessage_"] {
-                border: 2px solid #f98383 !important;
-            }
+            /* User message borders — injected dynamically by applyUserMessageBorder() */
 
-            /* Copilot / VS Code Chat — user message accent border */
-            .interactive-request .chat-markdown-part {
-                border: 2px solid #f98383 !important;
-                border-radius: 4px;
-                padding: 4px 8px;
-            }
+            /* Copilot / VS Code Chat — user message accent border (also dynamic) */
 
             /* User message navigation buttons — inline in footer bar */
             #rtl-msg-nav {
@@ -507,6 +500,55 @@
                 opacity: 0.55;
                 font-size: 10px;
             }
+
+            /* Border toggle popup (right-click on ↑↓) */
+            .rtl-border-popup {
+                position: fixed;
+                z-index: 100000;
+                background: var(--vscode-menu-background, #252526);
+                border: 1px solid var(--vscode-menu-border, #454545);
+                border-radius: 6px;
+                padding: 8px 10px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+                font-family: system-ui, sans-serif;
+                font-size: 12px;
+                color: var(--vscode-menu-foreground, rgba(255,255,255,0.85));
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                white-space: nowrap;
+                cursor: pointer;
+                user-select: none;
+            }
+            .rtl-border-popup:hover {
+                background: var(--vscode-menu-selectionBackground, #094771);
+            }
+            .rtl-border-toggle {
+                width: 32px;
+                height: 16px;
+                border-radius: 8px;
+                background: rgba(255,255,255,0.15);
+                position: relative;
+                transition: background 0.2s;
+                flex-shrink: 0;
+            }
+            .rtl-border-toggle.on {
+                background: #4caf50;
+            }
+            .rtl-border-toggle::after {
+                content: '';
+                position: absolute;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #fff;
+                top: 2px;
+                left: 2px;
+                transition: transform 0.2s;
+            }
+            .rtl-border-toggle.on::after {
+                transform: translateX(16px);
+            }
         `;
         document.head.appendChild(style);
     }
@@ -600,12 +642,18 @@
     let yoloCountdownCancel = null;   // cancel function for active countdown
     const YOLO_LS_KEY = 'rtl-yolo-delay-ms';
     const YOLO_POLL_MS = 500;
+    const BORDER_LS_KEY = 'rtl-user-msg-border';
 
     // Seed localStorage from injected config (only if not already set by user)
     if (localStorage.getItem(YOLO_LS_KEY) === null) {
         const seed = (window.__RTL_CONFIG__ && typeof window.__RTL_CONFIG__.yoloDelayMs === 'number')
             ? window.__RTL_CONFIG__.yoloDelayMs : 5000;
         localStorage.setItem(YOLO_LS_KEY, String(seed));
+    }
+    if (localStorage.getItem(BORDER_LS_KEY) === null) {
+        const seed = (window.__RTL_CONFIG__ && typeof window.__RTL_CONFIG__.userMessageBorder === 'boolean')
+            ? window.__RTL_CONFIG__.userMessageBorder : true;
+        localStorage.setItem(BORDER_LS_KEY, String(seed));
     }
 
     /** Read YOLO delay dynamically — changes take effect on next poll without reload */
@@ -616,6 +664,46 @@
     function setYoloDelayMs(ms) {
         localStorage.setItem(YOLO_LS_KEY, String(Math.max(0, ms)));
     }
+
+    // ─── User message border toggle ──────────────────────────────────
+    function getUserMessageBorder() {
+        return localStorage.getItem(BORDER_LS_KEY) !== 'false';
+    }
+    function setUserMessageBorder(on) {
+        localStorage.setItem(BORDER_LS_KEY, String(on));
+        applyUserMessageBorder();
+    }
+
+    /** Dynamically inject or remove the user message border style */
+    function applyUserMessageBorder() {
+        const STYLE_ID = 'rtl-user-msg-border-style';
+        let el = document.getElementById(STYLE_ID);
+        const enabled = getUserMessageBorder();
+
+        if (enabled) {
+            if (!el) {
+                el = document.createElement('style');
+                el.id = STYLE_ID;
+                el.textContent = `
+                    [class*="userMessage_"] {
+                        border: 2px solid #f98383 !important;
+                    }
+                    .interactive-request .chat-markdown-part {
+                        border: 2px solid #f98383 !important;
+                        border-radius: 4px;
+                        padding: 4px 8px;
+                    }
+                `;
+                document.head.appendChild(el);
+            }
+        } else {
+            if (el) el.remove();
+        }
+    }
+
+    // Apply on startup
+    applyUserMessageBorder();
+    // ────────────────────────────────────────────────────────────────
 
     function findYesButton(doc) {
         if (!doc) return null;
@@ -864,6 +952,50 @@
     }
 
     /**
+     * Show a toggle popup for user message borders (right-click on ↑↓)
+     */
+    function showBorderToggle(e) {
+        // Remove any existing popup
+        const existing = document.querySelector('.rtl-border-popup');
+        if (existing) { existing.remove(); return; }
+
+        const popup = document.createElement('div');
+        popup.className = 'rtl-border-popup';
+
+        const toggle = document.createElement('div');
+        toggle.className = 'rtl-border-toggle' + (getUserMessageBorder() ? ' on' : '');
+
+        const lbl = document.createElement('span');
+        lbl.textContent = 'User message border';
+
+        popup.appendChild(toggle);
+        popup.appendChild(lbl);
+
+        // Position near the buttons
+        popup.style.bottom = '40px';
+        popup.style.right = '16px';
+        document.body.appendChild(popup);
+
+        // Toggle on click
+        popup.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            const newVal = !getUserMessageBorder();
+            setUserMessageBorder(newVal);
+            toggle.classList.toggle('on', newVal);
+        });
+
+        // Close on outside click
+        function onOutsideClick(ev) {
+            if (!popup.contains(ev.target)) {
+                popup.remove();
+                document.removeEventListener('mousedown', onOutsideClick, true);
+            }
+        }
+        setTimeout(() => document.addEventListener('mousedown', onOutsideClick, true), 0);
+    }
+
+    /**
      * Inject navigation buttons (↑ ↓) above the chat input box
      */
     function injectMessageNavigation() {
@@ -889,12 +1021,14 @@
         upBtn.title = 'Previous user message (↑)';
         upBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>';
         upBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); navigateUserMessages(-1); });
+        upBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showBorderToggle(e); });
 
         // Down button
         const downBtn = document.createElement('button');
         downBtn.title = 'Next user message (↓)';
         downBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>';
         downBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); navigateUserMessages(1); });
+        downBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showBorderToggle(e); });
 
         // YOLO mode toggle button
         const yoloBtn = document.createElement('button');

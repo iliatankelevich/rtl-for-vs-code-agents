@@ -113,7 +113,8 @@ function needsInjection(indexPath) {
 function buildConfigBlock() {
     const config = getConfig();
     const yoloSeconds = Number(config.get('yoloCountdownSeconds', 5)) || 0;
-    return `window.__RTL_CONFIG__ = ${JSON.stringify({ yoloDelayMs: yoloSeconds * 1000 })};`;
+    const userMessageBorder = config.get('userMessageBorder', true);
+    return `window.__RTL_CONFIG__ = ${JSON.stringify({ yoloDelayMs: yoloSeconds * 1000, userMessageBorder })};`;
 }
 
 function injectScript(indexPath, scriptContent) {
@@ -686,15 +687,15 @@ async function activate(context) {
         })
     );
 
-    // Re-inject when YOLO countdown setting changes, then offer Reload
+    // Re-inject when settings change, then offer Reload
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('rtlForVsCodeAgents.yoloCountdownSeconds')) {
+            if (e.affectsConfiguration('rtlForVsCodeAgents.yoloCountdownSeconds') ||
+                e.affectsConfiguration('rtlForVsCodeAgents.userMessageBorder')) {
                 const updated = reinjectAll(context.extensionPath);
                 if (updated > 0) {
-                    const secs = getConfig().get('yoloCountdownSeconds', 5);
                     vscode.window.showInformationMessage(
-                        `YOLO countdown updated to ${secs}s. Reload required to apply.`,
+                        'RTL settings updated. Reload required to apply.',
                         'Reload Window'
                     ).then(choice => {
                         if (choice === 'Reload Window') {
