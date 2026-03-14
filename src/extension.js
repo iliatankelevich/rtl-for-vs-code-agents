@@ -101,7 +101,11 @@ function ensureBackup(indexPath) {
 }
 
 function isInjected(content) {
-    return content.includes(MARKER);
+    return content.includes('// ' + MARKER);
+}
+
+function hasAnyInjection(content) {
+    return content.includes('// ' + MARKER) || content.includes('// RTL Support for Claude Code');
 }
 
 function needsInjection(indexPath) {
@@ -118,12 +122,15 @@ function buildConfigBlock() {
 }
 
 function injectScript(indexPath, scriptContent) {
-    const original = fs.readFileSync(indexPath, 'utf8');
+    let original = fs.readFileSync(indexPath, 'utf8');
     if (isInjected(original)) {
         return { changed: false, reason: 'already-injected' };
     }
 
     ensureBackup(indexPath);
+
+    // Strip legacy injection if present (older versions used a different header)
+    original = stripInjection(original);
 
     const configBlock = buildConfigBlock();
     const appended = `${original}\n\n// ${MARKER} (injected)\n${configBlock}\n${scriptContent}\n`;
@@ -401,6 +408,18 @@ async function fetchLatestRelease() {
     };
 }
 
+/**
+ * Strip any RTL injection (current or legacy) from file content.
+ * Returns the clean original content, or the input unchanged if no injection found.
+ */
+function stripInjection(content) {
+    // Try current marker first, then legacy header
+    let mi = content.indexOf('// ' + MARKER);
+    if (mi <= 0) mi = content.indexOf('// RTL Support for Claude Code');
+    if (mi <= 0) return content;
+    return content.substring(0, mi).trimEnd();
+}
+
 function restoreAllBackups() {
     const installations = listExtensionInstallations();
     const antigravityApp = getAntigravityAppInstallation();
@@ -411,7 +430,10 @@ function restoreAllBackups() {
         const backupPath = `${target.indexPath}.backup`;
         if (fs.existsSync(backupPath) && fs.existsSync(target.indexPath)) {
             try {
-                fs.copyFileSync(backupPath, target.indexPath);
+                let content = fs.readFileSync(backupPath, 'utf8');
+                // Clean backup in case it was created from an already-injected file
+                content = stripInjection(content);
+                fs.writeFileSync(target.indexPath, content, 'utf8');
                 fs.unlinkSync(backupPath);
                 restored++;
             } catch (e) {
@@ -433,12 +455,11 @@ function reinjectAll(extensionPath) {
     for (const target of targets) {
         if (!fs.existsSync(target.indexPath)) continue;
         const content = fs.readFileSync(target.indexPath, 'utf8');
-        if (!isInjected(content)) continue;
+        if (!hasAnyInjection(content)) continue;
 
-        // Strip old injection, re-append with new config
-        const mi = content.indexOf('// ' + MARKER);
-        if (mi <= 0) continue;
-        const clean = content.substring(0, mi).trimEnd();
+        // Strip old injection (current or legacy), re-append with new config
+        const clean = stripInjection(content);
+        if (clean === content) continue; // nothing was stripped
         const output = `${clean}\n\n// ${MARKER} (injected)\n${configBlock}\n${scriptContent}\n`;
         fs.writeFileSync(target.indexPath, output, 'utf8');
         count++;
