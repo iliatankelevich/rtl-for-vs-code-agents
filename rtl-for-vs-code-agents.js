@@ -271,6 +271,9 @@
         element.style.unicodeBidi = 'plaintext';
         element.style.fontFamily = CONFIG.fontFamily;
         element.setAttribute('data-rtl-input', 'true');
+
+        // Sync RTL to mentionMirror sibling (Claude Code 2.1.76+)
+        syncMirrorRTL(element, true);
     }
 
     /**
@@ -280,6 +283,33 @@
         element.style.direction = 'ltr';
         element.style.textAlign = 'left';
         element.removeAttribute('data-rtl-input');
+
+        // Sync LTR to mentionMirror sibling
+        syncMirrorRTL(element, false);
+    }
+
+    /**
+     * Sync RTL/LTR direction to the mentionMirror sibling element.
+     * In Claude Code 2.1.76+, the input text is transparent (color: #0000)
+     * and the visible text is rendered by a mentionMirror div with position: absolute.
+     * Both must have matching direction for the caret to align with visible text.
+     */
+    function syncMirrorRTL(inputElement, isRTL) {
+        const mirror = inputElement.parentElement &&
+            inputElement.parentElement.querySelector('[class*="mentionMirror"]');
+        if (!mirror) return;
+
+        if (isRTL) {
+            mirror.style.direction = 'rtl';
+            mirror.style.textAlign = 'right';
+            mirror.style.unicodeBidi = 'plaintext';
+            mirror.style.fontFamily = CONFIG.fontFamily;
+        } else {
+            mirror.style.direction = '';
+            mirror.style.textAlign = '';
+            mirror.style.unicodeBidi = '';
+            mirror.style.fontFamily = '';
+        }
     }
 
     /**
@@ -316,7 +346,8 @@
             [data-rtl-applied="true"] * {
                 unicode-bidi: plaintext !important;
             }
-            [data-rtl-input="true"] {
+            [data-rtl-input="true"],
+            [data-rtl-input="true"] + [class*="mentionMirror"] {
                 unicode-bidi: plaintext !important;
             }
             /* Maintain code blocks as LTR within RTL containers */

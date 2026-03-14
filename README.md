@@ -159,6 +159,9 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v8.2.2
+- **Fix mention mirror RTL sync:** Fixed cursor misalignment in Claude Code 2.1.76+ input box — the new mentionMirror overlay now syncs RTL direction with the input, keeping the caret aligned with visible text
+
 ### v8.1.0
 - **YOLO Mode 💪 (auto-approve with countdown):** Toggle YOLO mode with the 💪 button to auto-approve all tool calls. A countdown progress bar with a **NO!** cancel button appears before each approval. Right-click the button to adjust the delay (0 = instant). Setting is persistent via localStorage.
 - **YOLO countdown settings:** Configurable via VS Code Settings (`yoloCountdownSeconds`) or right-click on the 💪 button (instant, no reload needed)
