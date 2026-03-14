@@ -600,6 +600,9 @@ async function handleVersionUpgrade(context) {
     if (storedVersion && storedVersion !== localVersion) {
         console.log(`RTL: version changed ${storedVersion} → ${localVersion}, re-injecting...`);
         restoreAllBackups();
+        // Re-inject with the new script even if no backup existed
+        // (reinjectAll strips old injection by MARKER and re-appends current script)
+        reinjectAll(context.extensionPath);
     }
 
     await context.globalState.update('rtlForVsCodeAgents.installedVersion', localVersion);
