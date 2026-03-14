@@ -118,6 +118,7 @@ is all you need!
 | `rtlForVsCodeAgents.autoConfigureCustomCss` | `false` | Automatically configure Custom CSS Loader |
 | `rtlForVsCodeAgents.autoCheckUpdates` | `true` | Automatically check for extension updates from GitHub on startup |
 | `rtlForVsCodeAgents.updateCheckIntervalHours` | `24` | How often to check for updates (0 = startup only) |
+| `rtlForVsCodeAgents.userMessageBorder` | `true` | Show coral border on user messages. Easier to toggle via right-click on ↑↓ buttons |
 | `rtlForVsCodeAgents.yoloCountdownSeconds` | `5` | YOLO mode countdown before auto-approve (0 = instant). Easier to change via right-click on the 💪 button |
 </details>
 
@@ -161,6 +162,12 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 
 ### v8.2.2
 - **Fix mention mirror RTL sync:** Fixed cursor misalignment in Claude Code 2.1.76+ input box — the new mentionMirror overlay now syncs RTL direction with the input, keeping the caret aligned with visible text
+
+### v8.2.1
+- **Bright scrollbar:** Chat panel scrollbar is now much more visible (brighter thumb, wider track) for easier navigation in long conversations
+
+### v8.2.0
+- **User message border toggle:** New `userMessageBorder` setting and instant right-click toggle on ↑↓ navigation buttons — toggle the coral border on user messages on/off without reload (persisted via localStorage)
 
 ### v8.1.0
 - **YOLO Mode 💪 (auto-approve with countdown):** Toggle YOLO mode with the 💪 button to auto-approve all tool calls. A countdown progress bar with a **NO!** cancel button appears before each approval. Right-click the button to adjust the delay (0 = instant). Setting is persistent via localStorage.
