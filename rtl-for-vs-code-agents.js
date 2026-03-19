@@ -367,8 +367,14 @@
                 white-space: normal !important;
             }
             [class*="sessionItem_"] {
-                direction: rtl !important;
-                padding: 0 !important;
+                height: auto !important;
+                min-height: 28px !important;
+                padding: 8px !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+                border-radius: 0 !important;
+            }
+            [class*="sessionItem_"]:last-child {
+                border-bottom: none !important;
             }
             [class*="dropdown_"] {
                 width: max(400px, 100vw - 32px) !important;
@@ -376,22 +382,25 @@
             }
 
             /* Claude Code Chat History Header Button - unconditional overrides */
-            [class*="sessionsButtonText_"] {
+            [class*="sessionsButtonText_"],
+            [class*="titleTextInner_"] {
                 white-space: normal !important;
                 display: -webkit-box !important;
                 -webkit-line-clamp: 3 !important;
                 -webkit-box-orient: vertical !important;
                 overflow: hidden !important;
             }
-            [class*="sessionsButtonContent_"] {
+            [class*="sessionsButtonContent_"],
+            [class*="titleGroup_"] {
                 max-width: unset !important;
             }
-            [class*="sessionsButton_"] {
+            [class*="sessionsButton_"],
+            [class*="titleText_"] {
                 max-width: unset !important;
             }
 
             /* Claude Code UI accent borders */
-            [class*="header_"]:has([class*="sessionsButton_"]) {
+            [class*="header_"]:has([class*="titleText_"]) {
                 border: 2px solid #c8a2f8 !important;
             }
             /* User message borders — injected dynamically by applyUserMessageBorder() */
@@ -1057,9 +1066,9 @@
         const footer = document.querySelector('[class*="inputFooter_"]');
         if (!footer) return;
 
-        // Find the addButtonContainer to insert before it
-        const addBtn = footer.querySelector('[class*="addButtonContainer_"]');
-        if (!addBtn) return;
+        // Find the permission mode container ("Ask before edits") to insert before it
+        const permContainer = footer.querySelector('[class*="container_"][class*="_"]:has([class*="footerButtonPrimary_"])');
+        if (!permContainer) return;
 
         // Create navigation container
         const nav = document.createElement('div');
@@ -1094,8 +1103,8 @@
         nav.appendChild(downBtn);
         nav.appendChild(yoloBtn);
 
-        // Insert to the left of the add button
-        footer.insertBefore(nav, addBtn);
+        // Insert to the left of the "Ask before edits" button
+        footer.insertBefore(nav, permContainer);
     }
 
     /**
@@ -1211,7 +1220,7 @@
         });
 
         // Process the header button text (current session title)
-        const buttonTexts = document.querySelectorAll('[class*="sessionsButtonText_"]');
+        const buttonTexts = document.querySelectorAll('[class*="sessionsButtonText_"], [class*="titleTextInner_"]');
         buttonTexts.forEach(el => {
             const text = el.textContent || '';
             if (shouldBeRTLText(text)) {

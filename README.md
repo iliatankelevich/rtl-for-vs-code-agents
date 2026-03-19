@@ -160,6 +160,11 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v8.2.4
+- **Fix session history list:** Items now have proper spacing and separator lines (override fixed height)
+- **Fix header accent border:** Update selector for new Claude Code DOM structure
+- **Move nav/YOLO buttons:** Repositioned next to "Ask before edits" button
+
 ### v8.2.2
 - **Fix mention mirror RTL sync:** Fixed cursor misalignment in Claude Code 2.1.76+ input box — the new mentionMirror overlay now syncs RTL direction with the input, keeping the caret aligned with visible text
 
