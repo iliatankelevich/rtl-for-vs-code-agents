@@ -160,6 +160,10 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v8.2.5
+- **Fix RTL detection with attachments:** Skip attachment containers (filenames, dimensions) when detecting text direction, so Hebrew messages with attachments align correctly
+- **Expand collapsed user messages:** Increase collapsed message preview from ~3 lines to ~5 lines
+
 ### v8.2.4
 - **Fix session history list:** Items now have proper spacing and separator lines (override fixed height)
 - **Fix header accent border:** Update selector for new Claude Code DOM structure

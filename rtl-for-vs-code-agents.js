@@ -160,6 +160,13 @@
             return '';
         }
 
+        // Skip attachment containers (Claude Code user message attachments)
+        // These contain LTR text like filenames ("image.png", "711×170") that would
+        // incorrectly cause the RTL detector to classify Hebrew messages as LTR
+        if (element.matches && element.matches('[class*="userMessageAttachments_"], [class*="pill_"]')) {
+            return '';
+        }
+
         // Check direct text nodes
         for (const node of element.childNodes) {
             if (node.nodeType === Node.TEXT_NODE) {
@@ -397,6 +404,11 @@
             [class*="sessionsButton_"],
             [class*="titleText_"] {
                 max-width: unset !important;
+            }
+
+            /* Expand collapsed user messages from ~3 lines to ~5 lines */
+            [class*="userMessage_"] [class*="content_"][class*="collapsed_"] {
+                max-height: 100px !important;
             }
 
             /* Claude Code UI accent borders */
