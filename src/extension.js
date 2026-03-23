@@ -21,6 +21,21 @@ function getScriptContent(extensionPath) {
     return fs.readFileSync(scriptPath, 'utf8');
 }
 
+function resolveCodexWebviewEntrypoint(extensionDir) {
+    const indexHtmlPath = path.join(extensionDir, 'webview', 'index.html');
+    if (!fs.existsSync(indexHtmlPath)) {
+        return null;
+    }
+
+    const html = fs.readFileSync(indexHtmlPath, 'utf8');
+    const match = html.match(/<script[^>]+src="\.\/([^"]+\.js)"/i);
+    if (!match) {
+        return null;
+    }
+
+    return path.join(extensionDir, 'webview', match[1].replace(/\//g, path.sep));
+}
+
 function listExtensionInstallations() {
     const home = os.homedir();
     const locations = [
@@ -40,6 +55,11 @@ function listExtensionInstallations() {
             prefix: 'google.geminicodeassist-',
             type: 'gemini-extension',
             webviewFile: path.join('webview', 'app_bundle.js')
+        },
+        {
+            prefix: 'openai.chatgpt-',
+            type: 'codex-extension',
+            resolveIndexPath: resolveCodexWebviewEntrypoint
         }
     ];
 
@@ -58,7 +78,12 @@ function listExtensionInstallations() {
                 if (!entry.name.startsWith(pattern.prefix)) continue;
 
                 const extensionDir = path.join(location.basePath, entry.name);
-                const indexPath = path.join(extensionDir, pattern.webviewFile);
+                const indexPath = pattern.resolveIndexPath
+                    ? pattern.resolveIndexPath(extensionDir)
+                    : path.join(extensionDir, pattern.webviewFile);
+
+                if (!indexPath) continue;
+
                 results.push({
                     type: pattern.type,
                     location: location.label,
@@ -142,6 +167,8 @@ async function confirmInjection(target) {
     let nameLine;
     if (target.type === 'antigravity-app') {
         nameLine = 'Antigravity: installation found requiring RTL injection.';
+    } else if (target.type === 'codex-extension') {
+        nameLine = 'Codex: installation found requiring RTL injection.';
     } else if (target.type === 'gemini-extension') {
         nameLine = 'Gemini Code Assist: new version found requiring RTL injection.';
     } else {
@@ -160,7 +187,11 @@ async function confirmInjection(target) {
 
 function showPostInjectNotice(targets) {
     const includesAntigravity = targets.some(t => t.type === 'antigravity-app');
-    const includesWebviewExtension = targets.some(t => t.type === 'claude-extension' || t.type === 'gemini-extension');
+    const includesWebviewExtension = targets.some(t =>
+        t.type === 'claude-extension' ||
+        t.type === 'gemini-extension' ||
+        t.type === 'codex-extension'
+    );
 
     let message = 'RTL: injection successful.';
     let buttons = [];
@@ -195,7 +226,7 @@ async function checkAndInject(context, options = {}) {
 
     if (targets.length === 0) {
         if (!quiet && notifyNoChanges) {
-            vscode.window.showInformationMessage('RTL: no installations of Claude Code, Gemini Code Assist or Antigravity found.');
+            vscode.window.showInformationMessage('RTL: no installations of Codex, Claude Code, Gemini Code Assist or Antigravity found.');
         }
         return;
     }

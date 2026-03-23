@@ -8,6 +8,7 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 ## Features
 
 ### NEW
+- **Codex (ChatGPT) support** — Full RTL support for OpenAI Codex: messages, input, title, Previous Messages, nav buttons, YOLO auto-approve, user borders, and neutral text colors
 - **YOLO Mode 💪 (auto-approve with countdown)** — toggle YOLO mode to auto-approve all tool calls. A progress bar counts down before each approval, with a **NO!** button to cancel. Right-click the 💪 button to set the countdown delay (0 = instant, no progress bar). The setting is persistent across sessions.
 ![YOLO Mode](ReadmeImages/YoloModeButton.png)
 
@@ -26,8 +27,8 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 - **Automatic RTL** — detects RTL textion for Hebrew, Arabic, Persian, Urdu, and more
 - Code blocks remain LTR
 - **Input box RTL support**
-- Works with GitHub Copilot Chat, Claude Code (VS Code, Cursor, Antigravity), Gemini Code Assist, and Antigravity Chat
-- Automatic injection into Claude Code and Gemini Code Assist (no manual setup needed)
+- Works with GitHub Copilot Chat, Claude Code, Codex (ChatGPT), Gemini Code Assist, and Antigravity Chat
+- Automatic injection into Claude Code, Codex, and Gemini Code Assist (no manual setup needed)
 
 ## Preview
 
@@ -72,7 +73,7 @@ Also - The extension checks for updates every time you restart VS CODE.
 3. Select the downloaded file
 4. Restart VS Code
 
-That's it! The extension automatically injects RTL support into Claude Code and Gemini Code Assist - no additional setup needed.
+That's it! The extension automatically injects RTL support into Claude Code, Codex (ChatGPT), and Gemini Code Assist - no additional setup needed.
 
 ### To Enable RTL in GitHub Copilot Chat also:
 
@@ -102,8 +103,8 @@ is all you need!
 <details>
 <summary>Commands</summary>
 
-- **RTL for VS Code Agents: Check and Inject Claude Code** - Manually check and inject RTL into Claude Code
-- **RTL for VS Code Agents: Configure Custom CSS Loader** - Configure Custom CSS extension for Copilot
+- **RTL for VS Code Agents: Check and Inject** - Manually check and inject RTL into Claude Code, Codex, and Gemini Code Assist
+- **RTL for VS Code Agents: Configure Custom CSS Loader** - Configure Custom CSS extension for Copilot Chat
 - **RTL for VS Code Agents: Check for Updates** - Check GitHub for a newer version and install it
 - **RTL for VS Code Agents: Remove All RTL Injections** - Restore all original files (run before uninstalling the extension)
 </details>
@@ -113,7 +114,7 @@ is all you need!
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `rtlForVsCodeAgents.autoInject` | `true` | Automatically inject RTL into new Claude Code versions |
+| `rtlForVsCodeAgents.autoInject` | `true` | Automatically inject RTL into new Claude Code / Codex / Gemini versions |
 | `rtlForVsCodeAgents.checkIntervalHours` | `0` | How often to check (0 = startup only) |
 | `rtlForVsCodeAgents.autoConfigureCustomCss` | `false` | Automatically configure Custom CSS Loader |
 | `rtlForVsCodeAgents.autoCheckUpdates` | `true` | Automatically check for extension updates from GitHub on startup |
@@ -128,7 +129,7 @@ is all you need!
 | Problem | Solution |
 |---------|----------|
 | "[Unsupported]" in title bar | Normal - this is expected when using Custom CSS |
-| RTL not working in Claude Code / Gemini | Run "Check and Inject Claude Code" command |
+| RTL not working in Claude Code / Codex / Gemini | Run "Check and Inject" command |
 | RTL not working in Copilot | Run "Configure Custom CSS Loader", then "Enable Custom CSS and JS" |
 | RTL stopped after VS Code update | The extension will notify you automatically — click "Enable Custom CSS" and run "Reload Window" |
 </details>
@@ -159,6 +160,10 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 </details>
 <details>
 <summary>Changelog</summary>
+
+### v9.0.0
+- **Codex (ChatGPT) support:** Full RTL support for OpenAI Codex chat — messages, input box, conversation title, Previous Messages section, navigation buttons, YOLO auto-approve, and user message borders
+- **Neutral text color in Codex:** Override Codex's blue-tinted text with clean neutral colors (light for dark theme, dark for light theme)
 
 ### v8.2.5
 - **Fix RTL detection with attachments:** Skip attachment containers (filenames, dimensions) when detecting text direction, so Hebrew messages with attachments align correctly

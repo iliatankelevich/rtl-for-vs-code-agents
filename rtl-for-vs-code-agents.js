@@ -32,6 +32,13 @@
             '.chat-markdown-part.rendered-markdown',
             '.chat-markdown-part',
             '.rendered-markdown',
+            // Codex (OpenAI) — user messages
+            '[data-content-search-unit-key$=":user"] .text-size-chat',
+            // Codex (OpenAI) — assistant + Previous Messages (p/li/ol/ul with text-size-chat)
+            'p.text-size-chat',
+            'li.text-size-chat',
+            'ol.text-size-chat',
+            'ul.text-size-chat',
             // Claude Code (new version - using partial class matching for dynamic hashes)
             '[class*="message_"][class*="userMessageContainer_"]', // User message outer wrapper (has both classes)
             '[class*="timelineMessage_"]', // Agent/timeline messages container
@@ -50,6 +57,8 @@
 
         // Selectors for input boxes
         inputSelectors: [
+            // Codex composer input
+            '.ProseMirror[data-codex-composer="true"]',
             // Claude Code input box
             'div[contenteditable="plaintext-only"][role="textbox"][aria-label="Message input"]',
             // Gemini CLI input box
@@ -349,6 +358,10 @@
             [class*="questionTextLarge_"] *,
             [class*="optionLabel_"] *,
             [class*="optionDescription_"] *,
+            [data-content-search-unit-key$=":user"] *,
+            [data-content-search-unit-key$=":assistant"] *,
+            .text-size-chat,
+            .text-size-chat *,
             [data-rtl-applied="true"],
             [data-rtl-applied="true"] * {
                 unicode-bidi: plaintext !important;
@@ -365,6 +378,54 @@
                 unicode-bidi: embed !important;
                 direction: ltr !important;
                 text-align: left !important;
+            }
+
+            /* Codex composer */
+            [data-codex-composer="true"],
+            [data-codex-composer="true"] p {
+                unicode-bidi: plaintext !important;
+            }
+            [data-codex-composer="true"][data-rtl-input="true"],
+            [data-codex-composer="true"][data-rtl-input="true"] p {
+                direction: rtl !important;
+                text-align: right !important;
+            }
+
+            /* Codex thread title and short labels */
+            [style*="view-transition-name: header-title"] [data-rtl-applied="true"],
+            [style*="view-transition-name: header-title"] [data-rtl-applied="true"] * {
+                direction: rtl !important;
+                text-align: right !important;
+                unicode-bidi: plaintext !important;
+            }
+            [style*="view-transition-name: header-title"] .truncate[data-rtl-applied="true"] {
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+            }
+
+            /* Codex Previous Messages (collapsed section) — assistant paragraphs */
+            .group.flex.min-w-0.flex-col > div > p.text-size-chat[data-rtl-applied="true"] {
+                unicode-bidi: isolate !important;
+            }
+
+            /* Codex message text — override blue tint with neutral colors */
+            .dark [data-content-search-unit-key$=":user"] .text-size-chat,
+            html:not(.light) [data-content-search-unit-key$=":user"] .text-size-chat {
+                color: #e3e3e3 !important;
+            }
+            .dark [data-content-search-unit-key$=":assistant"] .text-size-chat,
+            .dark p.text-size-chat.leading-relaxed,
+            html:not(.light) [data-content-search-unit-key$=":assistant"] .text-size-chat,
+            html:not(.light) p.text-size-chat.leading-relaxed {
+                color: #d0d0d0 !important;
+            }
+            .light [data-content-search-unit-key$=":user"] .text-size-chat {
+                color: #1a1a1a !important;
+            }
+            .light [data-content-search-unit-key$=":assistant"] .text-size-chat,
+            .light p.text-size-chat.leading-relaxed {
+                color: #333333 !important;
             }
 
             /* Claude Code Chat History List - unconditional overrides */
@@ -765,6 +826,9 @@
                         border-radius: 4px;
                         padding: 4px 8px;
                     }
+                    [data-content-search-unit-key$=":user"] .rounded-2xl {
+                        border: 2px solid #f98383 !important;
+                    }
                 `;
                 document.head.appendChild(el);
             }
@@ -779,6 +843,28 @@
 
     function findYesButton(doc) {
         if (!doc) return null;
+
+        // --- Codex approval dialog ---
+        // Has a radiogroup with "Yes" selected (aria-checked="true") + separate Submit button
+        const radioGroup = doc.querySelector('[role="radiogroup"]');
+        if (radioGroup) {
+            const yesRadio = radioGroup.querySelector('button[role="radio"][aria-checked="true"][aria-label="Yes"]');
+            if (yesRadio) {
+                // Find the Submit button in the same approval panel
+                const panel = radioGroup.closest('.flex.flex-col.gap-1');
+                if (panel) {
+                    // Look for the button whose text includes "Submit"
+                    const allBtns = panel.querySelectorAll('button');
+                    for (const btn of allBtns) {
+                        if (btn.textContent?.includes('Submit')) {
+                            return btn;
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Claude Code approval dialog ---
         const buttons = doc.querySelectorAll('button');
 
         // Strategy 1: button with "Yes" text and a span containing "1"
@@ -1074,49 +1160,62 @@
         // Already injected
         if (document.getElementById('rtl-msg-nav')) return;
 
-        // Find the footer bar inside the input area
+        // Build the shared nav element
+        function buildNav() {
+            const nav = document.createElement('div');
+            nav.id = 'rtl-msg-nav';
+            nav.addEventListener('mousedown', (e) => e.preventDefault());
+
+            const upBtn = document.createElement('button');
+            upBtn.title = 'Previous user message (↑)';
+            upBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>';
+            upBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); navigateUserMessages(-1); });
+            upBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showBorderToggle(e); });
+
+            const downBtn = document.createElement('button');
+            downBtn.title = 'Next user message (↓)';
+            downBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>';
+            downBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); navigateUserMessages(1); });
+            downBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showBorderToggle(e); });
+
+            const yoloBtn = document.createElement('button');
+            yoloBtn.id = 'rtl-yolo-btn';
+            yoloBtn.title = 'YOLO mode: auto-approve all tool calls';
+            yoloBtn.textContent = '💪';
+            if (yoloRunning) yoloBtn.classList.add('yolo-active');
+            yoloBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); toggleYolo(); });
+            yoloBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showYoloSettings(e); });
+
+            nav.appendChild(upBtn);
+            nav.appendChild(downBtn);
+            nav.appendChild(yoloBtn);
+            return nav;
+        }
+
+        // --- Claude Code: insert before "Ask before edits" in inputFooter ---
         const footer = document.querySelector('[class*="inputFooter_"]');
-        if (!footer) return;
+        if (footer) {
+            const permContainer = footer.querySelector('[class*="container_"][class*="_"]:has([class*="footerButtonPrimary_"])');
+            if (permContainer) {
+                footer.insertBefore(buildNav(), permContainer);
+                return;
+            }
+        }
 
-        // Find the permission mode container ("Ask before edits") to insert before it
-        const permContainer = footer.querySelector('[class*="container_"][class*="_"]:has([class*="footerButtonPrimary_"])');
-        if (!permContainer) return;
-
-        // Create navigation container
-        const nav = document.createElement('div');
-        nav.id = 'rtl-msg-nav';
-        // Prevent clicks from bubbling into the chat input area
-        nav.addEventListener('mousedown', (e) => e.preventDefault());
-
-        // Up button
-        const upBtn = document.createElement('button');
-        upBtn.title = 'Previous user message (↑)';
-        upBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>';
-        upBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); navigateUserMessages(-1); });
-        upBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showBorderToggle(e); });
-
-        // Down button
-        const downBtn = document.createElement('button');
-        downBtn.title = 'Next user message (↓)';
-        downBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>';
-        downBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); navigateUserMessages(1); });
-        downBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showBorderToggle(e); });
-
-        // YOLO mode toggle button
-        const yoloBtn = document.createElement('button');
-        yoloBtn.id = 'rtl-yolo-btn';
-        yoloBtn.title = 'YOLO mode: auto-approve all tool calls';
-        yoloBtn.textContent = '💪';
-        if (yoloRunning) yoloBtn.classList.add('yolo-active');
-        yoloBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); toggleYolo(); });
-        yoloBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showYoloSettings(e); });
-
-        nav.appendChild(upBtn);
-        nav.appendChild(downBtn);
-        nav.appendChild(yoloBtn);
-
-        // Insert to the left of the "Ask before edits" button
-        footer.insertBefore(nav, permContainer);
+        // --- Codex: insert in the right column of composer-footer, before submit ---
+        const codexComposer = document.querySelector('.ProseMirror[data-codex-composer="true"]');
+        if (codexComposer) {
+            const composerFooter = codexComposer.closest('.border-token-border')?.querySelector('.composer-footer');
+            if (composerFooter) {
+                // Right column: last child of the grid (contains submit button)
+                const rightCol = composerFooter.querySelector(':scope > div:last-child');
+                const submitBtn = rightCol?.querySelector('button');
+                if (rightCol && submitBtn) {
+                    rightCol.insertBefore(buildNav(), submitBtn);
+                    return;
+                }
+            }
+        }
     }
 
     /**
@@ -1124,10 +1223,16 @@
      * @param {number} direction  -1 for up (previous), +1 for down (next)
      */
     function navigateUserMessages(direction) {
-        // Claude Code — all messages in DOM, use scrollIntoView
-        const msgs = Array.from(document.querySelectorAll(
+        // Claude Code user messages
+        let msgs = Array.from(document.querySelectorAll(
             '[class*="message_"][class*="userMessageContainer_"]'
         ));
+        // Codex user messages
+        if (msgs.length === 0) {
+            msgs = Array.from(document.querySelectorAll(
+                '[data-content-search-unit-key$=":user"]'
+            ));
+        }
         if (msgs.length === 0) return;
 
         // Compute next index with cyclic wrap
@@ -1202,6 +1307,45 @@
                 el.style.paddingRight = '20px';
                 el.style.paddingLeft = '0';
                 el.setAttribute('data-rtl-applied', 'true');
+            }
+        });
+    }
+
+    /**
+     * Process Codex-specific compact UI elements such as thread title,
+     * history items, menu labels, and question options.
+     */
+    function processCodexUI() {
+        // Only target Codex-specific UI — thread title bar and history sidebar
+        const uiElements = document.querySelectorAll([
+            '[style*="view-transition-name: header-title"] .truncate',
+            '[style*="view-transition-name: header-title"] button > span.truncate'
+        ].join(', '));
+
+        uiElements.forEach(el => {
+            const text = (el.textContent || '').trim();
+            const isRTL = shouldBeRTLText(text);
+
+            if (isRTL) {
+                el.style.direction = 'rtl';
+                el.style.textAlign = 'right';
+                el.style.unicodeBidi = 'plaintext';
+                el.setAttribute('data-rtl-ui', 'true');
+                el.setAttribute('data-rtl-applied', 'true');
+
+                if (el.classList.contains('truncate') || el.classList.contains('whitespace-nowrap')) {
+                    el.style.whiteSpace = 'normal';
+                    el.style.overflow = 'visible';
+                    el.style.textOverflow = 'clip';
+                }
+            } else {
+                el.style.direction = '';
+                el.style.textAlign = '';
+                el.style.unicodeBidi = '';
+                el.style.whiteSpace = '';
+                el.style.overflow = '';
+                el.style.textOverflow = '';
+                el.removeAttribute('data-rtl-ui');
             }
         });
     }
@@ -1327,6 +1471,9 @@
 
         // Process chat history list items for RTL
         processHistoryList();
+
+        // Process Codex thread title, history labels, and compact controls
+        processCodexUI();
 
         // Ensure all code blocks are LTR (run after RTL processing)
         ensureCodeBlocksLTR();
