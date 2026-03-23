@@ -9,6 +9,7 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 ### NEW
 - **Codex (ChatGPT) support** — Full RTL support for OpenAI Codex: messages, input, title, Previous Messages, nav buttons, YOLO auto-approve, user borders, and neutral text colors
+- **Smart message collapse for Codex** — Long user messages are automatically collapsed to ~5 lines with a fade-out effect. Hover to reveal a **Show more** button; click to expand the full message (and **Show less** to collapse back). Keeps the chat clean without losing context!
 - **YOLO Mode 💪 (auto-approve with countdown)** — toggle YOLO mode to auto-approve all tool calls. A progress bar counts down before each approval, with a **NO!** button to cancel. Right-click the 💪 button to set the countdown delay (0 = instant, no progress bar). The setting is persistent across sessions.
 ![YOLO Mode](ReadmeImages/YoloModeButton.png)
 
@@ -163,6 +164,7 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 
 ### v9.0.0
 - **Codex (ChatGPT) support:** Full RTL support for OpenAI Codex chat — messages, input box, conversation title, Previous Messages section, navigation buttons, YOLO auto-approve, and user message borders
+- **Smart message collapse for Codex:** Long user messages auto-collapse to ~5 lines with fade-out. Hover for "Show more" button, click to expand/collapse
 - **Neutral text color in Codex:** Override Codex's blue-tinted text with clean neutral colors (light for dark theme, dark for light theme)
 
 ### v8.2.5

@@ -472,6 +472,43 @@
                 max-height: 100px !important;
             }
 
+            /* Codex user message collapse (Show more / Show less) */
+            [data-content-search-unit-key$=":user"] .text-size-chat.rtl-collapsed {
+                max-height: 6.5em;
+                overflow: hidden;
+                position: relative;
+            }
+            [data-content-search-unit-key$=":user"] .text-size-chat.rtl-collapsed::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 2em;
+                background: linear-gradient(transparent, var(--token-input-background, #2a2a2a));
+                pointer-events: none;
+            }
+            .rtl-show-more-btn {
+                display: none;
+                background: none;
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 8px;
+                color: rgba(255,255,255,0.7);
+                font-size: 11px;
+                padding: 2px 10px;
+                cursor: pointer;
+                margin-top: 4px;
+                transition: opacity 0.15s;
+            }
+            .rtl-show-more-btn:hover {
+                background: rgba(255,255,255,0.08);
+                color: rgba(255,255,255,0.9);
+            }
+            [data-content-search-unit-key$=":user"]:hover .rtl-show-more-btn,
+            .rtl-show-more-btn.rtl-expanded {
+                display: inline-block;
+            }
+
             /* Claude Code UI accent borders */
             [class*="header_"]:has([class*="titleText_"]) {
                 border: 2px solid #c8a2f8 !important;
@@ -1312,6 +1349,42 @@
     }
 
     /**
+     * Collapse long Codex user messages with Show more / Show less toggle.
+     */
+    function processCodexUserMessageCollapse() {
+        const containers = document.querySelectorAll('[data-content-search-unit-key$=":user"]');
+        containers.forEach(container => {
+            const textEl = container.querySelector('.text-size-chat');
+            if (!textEl || textEl.hasAttribute('data-rtl-collapse-processed')) return;
+            textEl.setAttribute('data-rtl-collapse-processed', 'true');
+
+            // Wait for content to render, then check if it overflows
+            requestAnimationFrame(() => {
+                const lineHeight = parseFloat(getComputedStyle(textEl).lineHeight) || 22;
+                const maxCollapsedHeight = lineHeight * 5; // ~5 lines
+                if (textEl.scrollHeight <= maxCollapsedHeight + 10) return; // short message, skip
+
+                textEl.classList.add('rtl-collapsed');
+
+                const btn = document.createElement('button');
+                btn.className = 'rtl-show-more-btn';
+                btn.textContent = 'Show more';
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const isCollapsed = textEl.classList.contains('rtl-collapsed');
+                    textEl.classList.toggle('rtl-collapsed');
+                    btn.textContent = isCollapsed ? 'Show less' : 'Show more';
+                    btn.classList.toggle('rtl-expanded', !isCollapsed);
+                });
+
+                // Insert button after the text element
+                textEl.parentElement.appendChild(btn);
+            });
+        });
+    }
+
+    /**
      * Process Codex-specific compact UI elements such as thread title,
      * history items, menu labels, and question options.
      */
@@ -1474,6 +1547,9 @@
 
         // Process Codex thread title, history labels, and compact controls
         processCodexUI();
+
+        // Collapse long Codex user messages
+        processCodexUserMessageCollapse();
 
         // Ensure all code blocks are LTR (run after RTL processing)
         ensureCodeBlocksLTR();
