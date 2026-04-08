@@ -8,6 +8,9 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 ## Features
 
 ### NEW
+- **Plan Documents RTL** — Claude Code's Plan/Review documents (displayed in a separate tab) now fully support RTL. Headings, paragraphs, lists, tables, and blockquotes align right for Hebrew/Arabic/Persian content, while code blocks stay LTR.
+![Plan Documents RTL](ReadmeImages/RTLinPlanDocs.png)
+
 - **Codex (ChatGPT) support** — Full RTL support for OpenAI Codex: messages, input, title, Previous Messages, nav buttons, YOLO auto-approve, user borders, and neutral text colors
 - **Smart message collapse for Codex** — Long user messages are automatically collapsed to ~5 lines with a fade-out effect. Hover to reveal a **Show more** button; click to expand the full message (and **Show less** to collapse back). Keeps the chat clean without losing context!
 - **YOLO Mode 💪 (auto-approve with countdown)** — toggle YOLO mode to auto-approve all tool calls. A progress bar counts down before each approval, with a **NO!** button to cancel. Right-click the 💪 button to set the countdown delay (0 = instant, no progress bar). The setting is persistent across sessions.
@@ -161,6 +164,9 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 </details>
 <details>
 <summary>Changelog</summary>
+
+### v9.1.0
+- **Plan Documents RTL:** Claude Code's Plan/Review documents (separate tab) now fully support RTL — headings, paragraphs, lists, tables, and blockquotes align right for RTL content, while code blocks stay LTR. Injected via a lightweight inline script with proper CSP nonce support.
 
 ### v9.0.0
 - **Codex (ChatGPT) support:** Full RTL support for OpenAI Codex chat — messages, input box, conversation title, Previous Messages section, navigation buttons, YOLO auto-approve, and user message borders

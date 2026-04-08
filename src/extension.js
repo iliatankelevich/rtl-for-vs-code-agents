@@ -146,6 +146,137 @@ function buildConfigBlock() {
     return `window.__RTL_CONFIG__ = ${JSON.stringify({ yoloDelayMs: yoloSeconds * 1000, userMessageBorder })};`;
 }
 
+const PLAN_MARKER = 'RTL-Plan-Injection';
+
+/**
+ * Build a minimal inline RTL script for the Claude Code Plan/Review webview.
+ * Includes only: RTL detection, processChildrenForRTL, observer, and init.
+ */
+function buildPlanRTLScript() {
+    // IMPORTANT: The output of this function is injected INTO a JS backtick template
+    // literal (the s46 variable in Claude Code's extension.js). That means all
+    // backslash escapes are evaluated TWICE: once when this template is evaluated,
+    // and once when s46 is evaluated. So we need double-escaping:
+    //   \\\\p{L} → (our template) → \\p{L} → (s46 template) → \p{L}  ✓
+    //   \\\\u200F → (our template) → \\u200F → (s46 template) → \u200F ✓
+    // Also: use double-quotes inside the script to avoid issues with s46's backticks.
+    return [
+        '<script nonce="{{NONCE}}">',
+        '// ' + PLAN_MARKER,
+        '(function(){',
+        '  var RTL_RANGES=[{s:0x0590,e:0x05FF},{s:0x0600,e:0x06FF},{s:0x0750,e:0x077F},{s:0x08A0,e:0x08FF},{s:0x0700,e:0x074F},{s:0x0780,e:0x07BF}];',
+        '  function isRTL(c){var code=c.charCodeAt(0);return RTL_RANGES.some(function(r){return code>=r.s&&code<=r.e})}',
+        '  function containsRTL(t){if(!t)return false;for(var i=0;i<t.length;i++)if(isRTL(t[i]))return true;return false}',
+        '  function shouldBeRTLText(t){if(!t)return false;t=t.trim();if(!t)return false;var first=null,rc=0,lc=0;for(var ch of t){if(isRTL(ch)){rc++;if(first===null)first=true}else if(/\\\\p{L}/u.test(ch)){lc++;if(first===null)first=false}}if(first===null)return false;if(first)return true;var tot=rc+lc;return tot>0&&(rc/tot)>=0.3}',
+        '  function injectRLM(el){var RLM="\\\\u200F";var f=el.firstChild;if(f&&f.nodeType===3&&f.textContent.startsWith(RLM))return;el.insertBefore(document.createTextNode(RLM),f)}',
+        '  function processContent(){',
+        '    var content=document.getElementById("content");',
+        '    if(!content)return;',
+        '    content.querySelectorAll("p,li,h1,h2,h3,h4,h5,h6").forEach(function(el){',
+        '      if(el.style.direction==="rtl")return;',
+        '      if(shouldBeRTLText(el.textContent)){',
+        '        el.style.direction="rtl";el.style.textAlign="right";el.style.unicodeBidi="isolate";',
+        '        el.setAttribute("data-rtl-applied","true");',
+        '        if(el.tagName==="LI")el.style.listStylePosition="inside";',
+        '        injectRLM(el);',
+        '      }',
+        '    });',
+        '    content.querySelectorAll("ul,ol").forEach(function(el){',
+        '      if(el.style.direction==="rtl")return;',
+        '      if(containsRTL(el.textContent)){',
+        '        el.style.direction="rtl";el.style.textAlign="right";el.style.paddingRight="20px";el.style.paddingLeft="0";',
+        '        el.setAttribute("data-rtl-applied","true");',
+        '      }',
+        '    });',
+        '    content.querySelectorAll("blockquote,details,summary,td,th,dt,dd").forEach(function(el){',
+        '      if(el.style.direction==="rtl")return;',
+        '      if(shouldBeRTLText(el.textContent)){',
+        '        el.style.direction="rtl";el.style.textAlign="right";el.style.unicodeBidi="isolate";',
+        '        el.setAttribute("data-rtl-applied","true");',
+        '      }',
+        '    });',
+        '    content.querySelectorAll("pre,code").forEach(function(el){',
+        '      el.style.direction="ltr";el.style.textAlign="left";el.style.unicodeBidi="embed";',
+        '    });',
+        '  }',
+        '  window.addEventListener("message",function(e){if(e.data&&e.data.type==="updateContent")setTimeout(processContent,50)});',
+        '  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",processContent);',
+        '  else processContent();',
+        '})();',
+        '</script>'
+    ].join('\n');
+}
+}
+
+/**
+ * Inject RTL script into the Plan/Review webview HTML template inside Claude Code's extension.js.
+ * Finds '</body>' inside the plan template and inserts the RTL script before it.
+ */
+function injectPlanRTL(extensionDir) {
+    const extJsPath = path.join(extensionDir, 'extension.js');
+    if (!fs.existsSync(extJsPath)) return { changed: false, reason: 'no-extension-js' };
+
+    let content = fs.readFileSync(extJsPath, 'utf8');
+
+    // Already injected?
+    if (content.includes(PLAN_MARKER)) return { changed: false, reason: 'already-injected' };
+
+    // Find the plan template: look for the closing </body> that's inside the template string.
+    // The plan template has a unique structure: </script>\n</body>\n</html> at the end of a backtick-string.
+    // We look for '</body>' preceded by '</script>' to target only the plan template.
+    const planBodyClose = content.indexOf('vscode.postMessage({ type: \'ready\' });');
+    if (planBodyClose < 0) return { changed: false, reason: 'plan-template-not-found' };
+
+    // Find the </script></body> after the ready message
+    const bodyCloseIdx = content.indexOf('</body>', planBodyClose);
+    if (bodyCloseIdx < 0) return { changed: false, reason: 'body-close-not-found' };
+
+    // Create backup of extension.js
+    const backupPath = `${extJsPath}.rtl-backup`;
+    if (!fs.existsSync(backupPath)) {
+        fs.copyFileSync(extJsPath, backupPath);
+    }
+
+    const rtlScript = buildPlanRTLScript();
+    const before = content.substring(0, bodyCloseIdx);
+    const after = content.substring(bodyCloseIdx);
+    content = before + rtlScript + '\n' + after;
+    fs.writeFileSync(extJsPath, content, 'utf8');
+    return { changed: true, reason: 'injected' };
+}
+
+/**
+ * Remove the Plan RTL injection from Claude Code's extension.js.
+ */
+function stripPlanInjection(extensionDir) {
+    const extJsPath = path.join(extensionDir, 'extension.js');
+    const backupPath = `${extJsPath}.rtl-backup`;
+
+    if (fs.existsSync(backupPath)) {
+        fs.copyFileSync(backupPath, extJsPath);
+        fs.unlinkSync(backupPath);
+        return true;
+    }
+
+    // Fallback: strip inline
+    if (!fs.existsSync(extJsPath)) return false;
+    let content = fs.readFileSync(extJsPath, 'utf8');
+    if (!content.includes(PLAN_MARKER)) return false;
+
+    // Remove the injected <script>...</script> block
+    const startTag = `<script>\n// ${PLAN_MARKER}`;
+    const si = content.indexOf(startTag);
+    if (si < 0) return false;
+    const endTag = '</script>';
+    const ei = content.indexOf(endTag, si);
+    if (ei < 0) return false;
+    content = content.substring(0, si) + content.substring(ei + endTag.length);
+    // Clean up extra newline
+    content = content.replace(/\n\n<\/body>/, '\n</body>');
+    fs.writeFileSync(extJsPath, content, 'utf8');
+    return true;
+}
+
 function injectScript(indexPath, scriptContent) {
     let original = fs.readFileSync(indexPath, 'utf8');
     if (isInjected(original)) {
@@ -256,6 +387,14 @@ async function checkAndInject(context, options = {}) {
             if (result.changed) {
                 injectedPaths.add(install.indexPath);
                 updatedPaths.push(install);
+            }
+            // Also inject RTL into Plan/Review webview for Claude Code
+            if (install.type === 'claude-extension') {
+                try {
+                    injectPlanRTL(install.extensionDir);
+                } catch (planErr) {
+                    console.error('RTL: failed to inject Plan RTL:', planErr.message);
+                }
             }
         } catch (error) {
             errors.push({ install, error });
@@ -471,6 +610,14 @@ function restoreAllBackups() {
                 console.error(`RTL: failed to restore backup for ${target.indexPath}:`, e.message);
             }
         }
+        // Also restore Plan RTL injection for Claude Code
+        if (target.type === 'claude-extension') {
+            try {
+                if (stripPlanInjection(target.extensionDir)) restored++;
+            } catch (e) {
+                console.error(`RTL: failed to restore Plan RTL for ${target.extensionDir}:`, e.message);
+            }
+        }
     }
     return restored;
 }
@@ -494,6 +641,16 @@ function reinjectAll(extensionPath) {
         const output = `${clean}\n\n// ${MARKER} (injected)\n${configBlock}\n${scriptContent}\n`;
         fs.writeFileSync(target.indexPath, output, 'utf8');
         count++;
+
+        // Also re-inject Plan RTL for Claude Code
+        if (target.type === 'claude-extension') {
+            try {
+                stripPlanInjection(target.extensionDir);
+                injectPlanRTL(target.extensionDir);
+            } catch (e) {
+                console.error('RTL: failed to re-inject Plan RTL:', e.message);
+            }
+        }
     }
     return count;
 }

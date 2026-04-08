@@ -19,6 +19,9 @@
 (function() {
     'use strict';
 
+    // Track elements that had RTL applied — survives React re-renders that strip data attributes
+    const rtlTrackedElements = new WeakSet();
+
     // Configuration
     const CONFIG = {
         // Font settings - includes fonts for Hebrew, Arabic, Persian
@@ -226,6 +229,7 @@
         element.style.unicodeBidi = 'isolate';
         element.style.fontFamily = CONFIG.fontFamily;
         element.setAttribute('data-rtl-applied', 'true');
+        rtlTrackedElements.add(element);
 
         // Apply to buttons specifically to ensure both properties are set
         element.querySelectorAll('button').forEach(btn => {
@@ -276,17 +280,30 @@
         element.style.textAlign = '';
         element.style.fontFamily = '';
         element.removeAttribute('data-rtl-applied');
+        rtlTrackedElements.delete(element);
     }
 
     /**
-     * Apply RTL styling to input boxes
+     * Apply RTL styling to input boxes.
+     * In 'uniform' mode: entire box is RTL (direction: rtl, text-align: right).
+     * In 'per-line' mode: browser auto-detects direction per paragraph (dir="auto").
      */
     function applyInputRTL(element) {
-        element.style.direction = 'rtl';
-        element.style.textAlign = 'right';
-        element.style.unicodeBidi = 'plaintext';
+        const mode = getInputDirMode();
         element.style.fontFamily = CONFIG.fontFamily;
         element.setAttribute('data-rtl-input', 'true');
+
+        if (mode === 'per-line') {
+            element.setAttribute('dir', 'auto');
+            element.style.direction = '';
+            element.style.textAlign = '';
+            element.style.unicodeBidi = 'plaintext';
+        } else {
+            element.removeAttribute('dir');
+            element.style.direction = 'rtl';
+            element.style.textAlign = 'right';
+            element.style.unicodeBidi = 'plaintext';
+        }
 
         // Sync RTL to mentionMirror sibling (Claude Code 2.1.76+)
         syncMirrorRTL(element, true);
@@ -296,8 +313,10 @@
      * Remove RTL styling from input boxes
      */
     function removeInputRTL(element) {
+        element.removeAttribute('dir');
         element.style.direction = 'ltr';
         element.style.textAlign = 'left';
+        element.style.unicodeBidi = '';
         element.removeAttribute('data-rtl-input');
 
         // Sync LTR to mentionMirror sibling
@@ -316,11 +335,21 @@
         if (!mirror) return;
 
         if (isRTL) {
-            mirror.style.direction = 'rtl';
-            mirror.style.textAlign = 'right';
-            mirror.style.unicodeBidi = 'plaintext';
+            const mode = getInputDirMode();
+            if (mode === 'per-line') {
+                mirror.setAttribute('dir', 'auto');
+                mirror.style.direction = '';
+                mirror.style.textAlign = '';
+                mirror.style.unicodeBidi = 'plaintext';
+            } else {
+                mirror.removeAttribute('dir');
+                mirror.style.direction = 'rtl';
+                mirror.style.textAlign = 'right';
+                mirror.style.unicodeBidi = 'plaintext';
+            }
             mirror.style.fontFamily = CONFIG.fontFamily;
         } else {
+            mirror.removeAttribute('dir');
             mirror.style.direction = '';
             mirror.style.textAlign = '';
             mirror.style.unicodeBidi = '';
@@ -575,6 +604,18 @@
                 animation: rtl-nav-highlight 0.6s ease-out !important;
             }
 
+            /* Input direction mode toggle button */
+            #rtl-input-dir-btn {
+                font-size: 13px;
+                line-height: 1;
+                opacity: 0.4;
+                transition: opacity 0.2s, transform 0.15s;
+            }
+            #rtl-input-dir-btn.input-dir-perline {
+                opacity: 1;
+                transform: scale(1.15);
+            }
+
             /* YOLO mode toggle button */
             #rtl-yolo-btn {
                 font-size: 13px;
@@ -813,6 +854,7 @@
     const YOLO_LS_KEY = 'rtl-yolo-delay-ms';
     const YOLO_POLL_MS = 500;
     const BORDER_LS_KEY = 'rtl-user-msg-border';
+    const INPUT_DIR_MODE_LS_KEY = 'rtl-input-dir-mode'; // 'uniform' (default) or 'per-line'
 
     // Seed localStorage from injected config (only if not already set by user)
     if (localStorage.getItem(YOLO_LS_KEY) === null) {
@@ -825,6 +867,11 @@
             ? window.__RTL_CONFIG__.userMessageBorder : true;
         localStorage.setItem(BORDER_LS_KEY, String(seed));
     }
+    if (localStorage.getItem(INPUT_DIR_MODE_LS_KEY) === null) {
+        const seed = (window.__RTL_CONFIG__ && window.__RTL_CONFIG__.inputDirMode)
+            ? window.__RTL_CONFIG__.inputDirMode : 'uniform';
+        localStorage.setItem(INPUT_DIR_MODE_LS_KEY, seed);
+    }
 
     /** Read YOLO delay dynamically — changes take effect on next poll without reload */
     function getYoloDelayMs() {
@@ -833,6 +880,24 @@
     }
     function setYoloDelayMs(ms) {
         localStorage.setItem(YOLO_LS_KEY, String(Math.max(0, ms)));
+    }
+
+    // ─── Input direction mode toggle ─────────────────────────────────
+    function getInputDirMode() {
+        return localStorage.getItem(INPUT_DIR_MODE_LS_KEY) === 'per-line' ? 'per-line' : 'uniform';
+    }
+    function setInputDirMode(mode) {
+        localStorage.setItem(INPUT_DIR_MODE_LS_KEY, mode);
+        reapplyInputDirection();
+    }
+
+    /** Re-apply direction to all active inputs after mode toggle */
+    function reapplyInputDirection() {
+        document.querySelectorAll(CONFIG.inputSelectors.join(', ')).forEach(input => {
+            if (input.getAttribute('data-rtl-input') === 'true') {
+                applyInputRTL(input);
+            }
+        });
     }
 
     // ─── User message border toggle ──────────────────────────────────
@@ -1223,8 +1288,27 @@
             yoloBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); toggleYolo(); });
             yoloBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showYoloSettings(e); });
 
+            const inputDirBtn = document.createElement('button');
+            inputDirBtn.id = 'rtl-input-dir-btn';
+            inputDirBtn.textContent = '⇔';
+            const currentMode = getInputDirMode();
+            inputDirBtn.title = currentMode === 'per-line'
+                ? 'Input direction: per-line (click for uniform)'
+                : 'Input direction: uniform (click for per-line)';
+            if (currentMode === 'per-line') inputDirBtn.classList.add('input-dir-perline');
+            inputDirBtn.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const newMode = getInputDirMode() === 'uniform' ? 'per-line' : 'uniform';
+                setInputDirMode(newMode);
+                inputDirBtn.classList.toggle('input-dir-perline', newMode === 'per-line');
+                inputDirBtn.title = newMode === 'per-line'
+                    ? 'Input direction: per-line (click for uniform)'
+                    : 'Input direction: uniform (click for per-line)';
+            });
+
             nav.appendChild(upBtn);
             nav.appendChild(downBtn);
+            nav.appendChild(inputDirBtn);
             nav.appendChild(yoloBtn);
             return nav;
         }
@@ -1343,6 +1427,30 @@
                 el.style.textAlign = 'right';
                 el.style.paddingRight = '20px';
                 el.style.paddingLeft = '0';
+                el.setAttribute('data-rtl-applied', 'true');
+            }
+        });
+    }
+
+    /**
+     * Process Claude Code Planning webview — a separate webview with a #content div
+     * containing rendered markdown (plan document).
+     */
+    function processPlanningWebview() {
+        const content = document.getElementById('content');
+        if (!content) return;
+        // Only act in planning webview (has #comment-banner sibling)
+        if (!document.getElementById('comment-banner')) return;
+
+        processChildrenForRTL(content);
+        // Also process direct block-level elements that processChildrenForRTL may skip
+        content.querySelectorAll('blockquote, details, summary, td, th, dt, dd').forEach(el => {
+            if (el.style.direction === 'rtl') return;
+            if (shouldBeRTLText(el.textContent)) {
+                el.style.direction = 'rtl';
+                el.style.textAlign = 'right';
+                el.style.unicodeBidi = 'isolate';
+                el.style.fontFamily = CONFIG.fontFamily;
                 el.setAttribute('data-rtl-applied', 'true');
             }
         });
@@ -1518,7 +1626,8 @@
 
             // Claude Code timeline/agent messages - process all child elements
             if (element.matches && element.matches('[class*="timelineMessage_"], [class*="root_"]')) {
-                // For agent messages, check each paragraph/list independently
+                // Always re-process children — Rewind replaces inner elements
+                // while the container keeps its data-rtl-container-processed attribute
                 processChildrenForRTL(element);
                 element.setAttribute('data-rtl-container-processed', 'true');
                 return;
@@ -1527,12 +1636,20 @@
             // Default logic for Copilot/Claude user messages
             const wasRTL = element.getAttribute('data-rtl-applied') === 'true';
             const needsRTL = shouldBeRTL(element);
+            const trackedRTL = rtlTrackedElements.has(element);
 
             if (needsRTL && !wasRTL) {
                 applyRTL(element);
+            } else if (needsRTL && wasRTL && !element.style.direction) {
+                // Re-apply RTL if styles were stripped (e.g. Rewind re-render)
+                applyRTL(element);
+            } else if (!needsRTL && trackedRTL && !wasRTL) {
+                // React re-render stripped data-rtl-applied and changed text (e.g. Rewind menu)
+                // Re-apply RTL since we know this element had Hebrew content before
+                applyRTL(element);
             } else if (!needsRTL && wasRTL) {
                 removeRTL(element);
-            } else if (!needsRTL && !wasRTL) {
+            } else if (!needsRTL && !wasRTL && !trackedRTL) {
                 // Even if parent is LTR, check children for Hebrew paragraphs
                 // This handles messages that start in English but have Hebrew content
                 processChildrenForRTL(element);
@@ -1550,6 +1667,9 @@
 
         // Collapse long Codex user messages
         processCodexUserMessageCollapse();
+
+        // Process Claude Code Planning webview (separate tab)
+        processPlanningWebview();
 
         // Ensure all code blocks are LTR (run after RTL processing)
         ensureCodeBlocksLTR();
@@ -1625,6 +1745,8 @@
 
                                 if (needsRTL && !wasRTL) {
                                     applyRTL(element);
+                                } else if (needsRTL && wasRTL && !element.style.direction) {
+                                    applyRTL(element);
                                 } else if (!needsRTL && wasRTL) {
                                     removeRTL(element);
                                 } else if (!needsRTL && !wasRTL) {
@@ -1654,8 +1776,9 @@
             characterData: true // Needed for streaming messages
         });
 
-        // Process input boxes periodically (they don't trigger addedNodes)
+        // Process periodically — catches re-renders (e.g. Rewind) that the observer may miss
         setInterval(() => {
+            processElements();
             processMonacoInputs(); // Monaco Editor inputs (Copilot) - uses CSS class toggle
             processInputs();       // Other inputs (Claude Code) - uses inline styles
             injectMessageNavigation(); // Ensure nav buttons exist (handles late DOM)
