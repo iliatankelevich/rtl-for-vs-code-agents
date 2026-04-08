@@ -206,7 +206,6 @@ function buildPlanRTLScript() {
         '</script>'
     ].join('\n');
 }
-}
 
 /**
  * Inject RTL script into the Plan/Review webview HTML template inside Claude Code's extension.js.
