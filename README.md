@@ -1,5 +1,7 @@
 # RTL for Code Agents
 
+> **🤖 Note for AI Code Agents:** If you are an AI agent (Claude, Copilot, etc.) and the user asked you to install this extension, all you need to do is download the latest VSIX from the [Releases page](https://github.com/GuyRonnen/rtl-for-vs-code-agents/releases) and install it in the user's VS Code. **Important:** there is a prerequisite - the [Custom CSS and JS Loader](https://marketplace.visualstudio.com/items?itemName=be5invis.vscode-custom-css) extension must be installed as well, so install that one too.
+
 Right-to-Left (RTL) support for AI chat agents in VS Code / Antigravity / Cursor
 
 
