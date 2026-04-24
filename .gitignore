@@ -7,6 +7,10 @@ output-for-guy.txt
 Untitled.png
 image.png
 
+# Personal dev/debug scripts (not part of the extension)
+debug-rewind.js
+inject-plan-rtl.js
+
 # Local Claude Code settings
 .claude/settings.local.json
 SocialPreview_1280×640px.pdn
