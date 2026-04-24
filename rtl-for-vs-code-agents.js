@@ -601,7 +601,19 @@
                 100% { box-shadow: 0 0 0 0 rgba(249,131,131,0); }
             }
             .rtl-nav-highlight {
-                animation: rtl-nav-highlight 0.6s ease-out !important;
+                animation: rtl-nav-highlight 0.9s ease-out !important;
+            }
+
+            /* Search match highlights inside messages */
+            mark.rtl-search-mark {
+                background: rgba(255, 200, 0, 0.35) !important;
+                color: inherit !important;
+                padding: 0 1px;
+                border-radius: 2px;
+            }
+            mark.rtl-search-mark.rtl-search-mark-active {
+                background: rgba(255, 165, 0, 0.7) !important;
+                outline: 1px solid rgba(255, 140, 0, 0.9);
             }
 
             /* Input direction mode toggle button */
@@ -685,7 +697,7 @@
                 position: fixed;
                 z-index: 100000;
                 background: var(--vscode-menu-background, #252526);
-                border: 1px solid var(--vscode-menu-border, #454545);
+                border: 2px solid rgba(200, 200, 200, 0.45);
                 border-radius: 6px;
                 padding: 8px 10px;
                 box-shadow: 0 4px 16px rgba(0,0,0,0.5);
@@ -760,6 +772,72 @@
             .rtl-border-toggle.on::after {
                 transform: translateX(16px);
             }
+
+            /* Search in conversation — button + top bar */
+            #rtl-search-btn {
+                font-size: 13px;
+                line-height: 1;
+                opacity: 0.6;
+                transition: opacity 0.15s;
+            }
+            #rtl-search-btn:hover { opacity: 1; }
+
+            #rtl-search-bar {
+                position: fixed;
+                bottom: 60px;
+                right: 16px;
+                z-index: 100000;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 8px;
+                background: var(--vscode-editorWidget-background, #252526);
+                border: 2px solid rgba(200, 200, 200, 0.45);
+                border-radius: 6px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+                font-family: system-ui, sans-serif;
+                font-size: 12px;
+                color: var(--vscode-editorWidget-foreground, rgba(255,255,255,0.85));
+                direction: ltr;
+            }
+            #rtl-search-bar input.rtl-search-input {
+                width: 220px;
+                padding: 3px 6px;
+                border: 1px solid var(--vscode-input-border, #3c3c3c);
+                border-radius: 3px;
+                background: var(--vscode-input-background, #1e1e1e);
+                color: var(--vscode-input-foreground, #ccc);
+                font-size: 12px;
+                outline: none;
+            }
+            #rtl-search-bar input.rtl-search-input:focus {
+                border-color: var(--vscode-focusBorder, #007fd4);
+            }
+            #rtl-search-bar .rtl-search-counter {
+                min-width: 42px;
+                text-align: center;
+                opacity: 0.75;
+                font-variant-numeric: tabular-nums;
+            }
+            #rtl-search-bar .rtl-search-counter.no-matches { color: #f98383; }
+            #rtl-search-bar button.rtl-search-btn {
+                width: 22px; height: 22px;
+                border: none; border-radius: 3px;
+                background: transparent;
+                color: var(--vscode-editorWidget-foreground, rgba(255,255,255,0.8));
+                cursor: pointer;
+                display: flex; align-items: center; justify-content: center;
+                padding: 0; opacity: 0.7;
+            }
+            #rtl-search-bar button.rtl-search-btn:hover {
+                opacity: 1;
+                background: var(--vscode-toolbar-hoverBackground, rgba(255,255,255,0.08));
+            }
+            #rtl-search-bar button.rtl-search-btn:disabled {
+                opacity: 0.3; cursor: default; background: transparent;
+            }
+            #rtl-search-bar button.rtl-search-btn svg { width: 12px; height: 12px; }
+            #rtl-search-bar button.rtl-search-close { font-size: 16px; line-height: 1; }
         `;
         document.head.appendChild(style);
     }
@@ -844,6 +922,12 @@
      * User message navigation — track current index
      */
     let navCurrentIndex = -1;
+
+    // ─── Search in conversation — state ───────────────────────────
+    let searchMatches = [];
+    let searchCurrentIndex = -1;
+    let searchDebounceId = null;
+    let searchQuery = '';
 
     // ─── YOLO Mode (auto-approve with countdown) ──────────────────
     let yoloPollId = null;
@@ -1306,8 +1390,22 @@
                     : 'Input direction: uniform (click for per-line)';
             });
 
+            const searchBtn = document.createElement('button');
+            searchBtn.id = 'rtl-search-btn';
+            searchBtn.title = 'Search in conversation';
+            searchBtn.textContent = '🔍';
+            searchBtn.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                if (document.getElementById('rtl-search-bar')) {
+                    closeSearchBar();
+                } else {
+                    openSearchBar();
+                }
+            });
+
             nav.appendChild(upBtn);
             nav.appendChild(downBtn);
+            nav.appendChild(searchBtn);
             nav.appendChild(inputDirBtn);
             nav.appendChild(yoloBtn);
             return nav;
@@ -1368,13 +1466,219 @@
         const target = msgs[navCurrentIndex];
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // Highlight pulse
+        // Highlight pulse (short, one-shot)
         target.classList.remove('rtl-nav-highlight');
         void target.offsetWidth;
         target.classList.add('rtl-nav-highlight');
         target.addEventListener('animationend', () => {
             target.classList.remove('rtl-nav-highlight');
         }, { once: true });
+    }
+
+    // ─── Search in conversation ──────────────────────────────────
+    const SEARCH_SELECTOR =
+        '[class*="message_"][class*="userMessageContainer_"], ' +
+        '[class*="timelineMessage_"], ' +
+        '[data-content-search-unit-key$=":user"]';
+
+    function unwrapSearchMarks() {
+        document.querySelectorAll('mark.rtl-search-mark').forEach(mark => {
+            const parent = mark.parentNode;
+            if (!parent) return;
+            while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+            parent.removeChild(mark);
+            parent.normalize();
+        });
+    }
+
+    function wrapMatchesInElement(el, query) {
+        if (!query) return [];
+        const marks = [];
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+                if (!node.nodeValue) return NodeFilter.FILTER_REJECT;
+                const p = node.parentNode;
+                if (!p) return NodeFilter.FILTER_REJECT;
+                const tag = p.nodeName;
+                if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'MARK') return NodeFilter.FILTER_REJECT;
+                return node.nodeValue.toLowerCase().includes(query)
+                    ? NodeFilter.FILTER_ACCEPT
+                    : NodeFilter.FILTER_REJECT;
+            }
+        });
+        const textNodes = [];
+        let n;
+        while ((n = walker.nextNode())) textNodes.push(n);
+
+        const qLen = query.length;
+        textNodes.forEach(node => {
+            const text = node.nodeValue;
+            const lower = text.toLowerCase();
+            const frag = document.createDocumentFragment();
+            let i = 0, idx;
+            while ((idx = lower.indexOf(query, i)) !== -1) {
+                if (idx > i) frag.appendChild(document.createTextNode(text.slice(i, idx)));
+                const mark = document.createElement('mark');
+                mark.className = 'rtl-search-mark';
+                mark.appendChild(document.createTextNode(text.slice(idx, idx + qLen)));
+                frag.appendChild(mark);
+                marks.push(mark);
+                i = idx + qLen;
+            }
+            if (i < text.length) frag.appendChild(document.createTextNode(text.slice(i)));
+            node.parentNode.replaceChild(frag, node);
+        });
+        return marks;
+    }
+
+    function collectSearchMatches(query) {
+        unwrapSearchMarks();
+        if (!query) return [];
+        const containers = Array.from(document.querySelectorAll(SEARCH_SELECTOR));
+        const allMarks = [];
+        containers.forEach(el => {
+            const marks = wrapMatchesInElement(el, query);
+            allMarks.push(...marks);
+        });
+        return allMarks;
+    }
+
+    function scrollToSearchHit(el) {
+        document.querySelectorAll('mark.rtl-search-mark-active')
+            .forEach(m => m.classList.remove('rtl-search-mark-active'));
+        el.classList.add('rtl-search-mark-active');
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function updateSearchCounter() {
+        const bar = document.getElementById('rtl-search-bar');
+        if (!bar) return;
+        const counter = bar.querySelector('.rtl-search-counter');
+        const upBtn = bar.querySelector('button.rtl-search-btn[data-dir="up"]');
+        const downBtn = bar.querySelector('button.rtl-search-btn[data-dir="down"]');
+        const total = searchMatches.length;
+        const pos = total > 0 ? (searchCurrentIndex + 1) : 0;
+        counter.textContent = `${pos}/${total}`;
+        counter.classList.toggle('no-matches', searchQuery !== '' && total === 0);
+        upBtn.disabled = total === 0;
+        downBtn.disabled = total === 0;
+    }
+
+    function updateSearchResults() {
+        const bar = document.getElementById('rtl-search-bar');
+        if (!bar) return;
+        const input = bar.querySelector('input.rtl-search-input');
+        const raw = (input.value || '').trim();
+        searchQuery = raw.toLowerCase();
+        searchMatches = collectSearchMatches(searchQuery);
+        if (searchMatches.length > 0) {
+            searchCurrentIndex = 0;
+            scrollToSearchHit(searchMatches[0]);
+        } else {
+            searchCurrentIndex = -1;
+        }
+        updateSearchCounter();
+    }
+
+    function navigateSearch(direction) {
+        if (!searchQuery) return;
+        const prevIndex = searchCurrentIndex;
+        searchMatches = collectSearchMatches(searchQuery);
+        if (searchMatches.length === 0) {
+            searchCurrentIndex = -1;
+            updateSearchCounter();
+            return;
+        }
+        // Restore index (clamped) then apply direction
+        if (prevIndex < 0 || prevIndex >= searchMatches.length) {
+            searchCurrentIndex = direction === -1 ? searchMatches.length - 1 : 0;
+        } else {
+            searchCurrentIndex = prevIndex;
+        }
+        searchCurrentIndex += direction;
+        if (searchCurrentIndex < 0) searchCurrentIndex = searchMatches.length - 1;
+        if (searchCurrentIndex >= searchMatches.length) searchCurrentIndex = 0;
+        scrollToSearchHit(searchMatches[searchCurrentIndex]);
+        updateSearchCounter();
+    }
+
+    function onSearchInput() {
+        if (searchDebounceId) clearTimeout(searchDebounceId);
+        searchDebounceId = setTimeout(() => {
+            searchDebounceId = null;
+            updateSearchResults();
+        }, 150);
+    }
+
+    function onSearchKeydown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            navigateSearch(e.shiftKey ? -1 : 1);
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            closeSearchBar();
+        }
+    }
+
+    function openSearchBar() {
+        if (document.getElementById('rtl-search-bar')) return;
+
+        const bar = document.createElement('div');
+        bar.id = 'rtl-search-bar';
+        bar.addEventListener('mousedown', (e) => e.stopPropagation());
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'rtl-search-input';
+        input.placeholder = 'Search in conversation…';
+        input.addEventListener('input', onSearchInput);
+        input.addEventListener('keydown', onSearchKeydown);
+
+        const counter = document.createElement('span');
+        counter.className = 'rtl-search-counter';
+        counter.textContent = '0/0';
+
+        const upBtn = document.createElement('button');
+        upBtn.className = 'rtl-search-btn';
+        upBtn.dataset.dir = 'up';
+        upBtn.title = 'Previous match (Shift+Enter)';
+        upBtn.disabled = true;
+        upBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>';
+        upBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); navigateSearch(-1); });
+
+        const downBtn = document.createElement('button');
+        downBtn.className = 'rtl-search-btn';
+        downBtn.dataset.dir = 'down';
+        downBtn.title = 'Next match (Enter)';
+        downBtn.disabled = true;
+        downBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>';
+        downBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); navigateSearch(1); });
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'rtl-search-btn rtl-search-close';
+        closeBtn.dataset.dir = 'close';
+        closeBtn.title = 'Close (Esc)';
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); closeSearchBar(); });
+
+        bar.appendChild(input);
+        bar.appendChild(counter);
+        bar.appendChild(upBtn);
+        bar.appendChild(downBtn);
+        bar.appendChild(closeBtn);
+
+        document.body.appendChild(bar);
+        input.focus();
+    }
+
+    function closeSearchBar() {
+        if (searchDebounceId) { clearTimeout(searchDebounceId); searchDebounceId = null; }
+        const bar = document.getElementById('rtl-search-bar');
+        if (bar) bar.remove();
+        unwrapSearchMarks();
+        searchMatches = [];
+        searchCurrentIndex = -1;
+        searchQuery = '';
     }
 
     /**

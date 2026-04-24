@@ -10,6 +10,9 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 ## Features
 
 ### NEW
+- **Search in conversation 🔍** — click the 🔍 button in the footer to open a search bar. Finds your query across all user and agent messages, highlights every match in-place with a yellow/orange marker, and lets you jump between matches with ↑/↓ or Enter / Shift+Enter. Case-insensitive. Close with × or Esc.
+![Search in conversation](ReadmeImages/SearchInConversation.png)
+
 - **Plan Documents RTL** — Claude Code's Plan/Review documents (displayed in a separate tab) now fully support RTL. Headings, paragraphs, lists, tables, and blockquotes align right for Hebrew/Arabic/Persian content, while code blocks stay LTR.
 ![Plan Documents RTL](ReadmeImages/RTLinPlanDocs.png)
 
@@ -166,6 +169,10 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 </details>
 <details>
 <summary>Changelog</summary>
+
+### v10.0.0
+- **Search in conversation 🔍:** new search bar with in-place `<mark>` highlighting for every match across user + agent messages. Navigate with ↑/↓ or Enter / Shift+Enter. Case-insensitive, closes on × or Esc. Counter shows position (e.g. 3/12).
+- **Outline for floating popups:** lighter gray 2px outline on the search bar and YOLO settings popup for better visibility.
 
 ### v9.1.0
 - **Plan Documents RTL:** Claude Code's Plan/Review documents (separate tab) now fully support RTL — headings, paragraphs, lists, tables, and blockquotes align right for RTL content, while code blocks stay LTR. Injected via a lightweight inline script with proper CSP nonce support.
