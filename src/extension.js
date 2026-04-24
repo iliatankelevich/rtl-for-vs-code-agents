@@ -327,15 +327,17 @@ function showPostInjectNotice(targets) {
     let buttons = [];
 
     if (includesWebviewExtension) {
-        message += ' Reload required to apply changes.';
-        buttons.push('Reload Window');
+        message += ' Restart Extension Host to apply changes.';
+        buttons.push('Restart Extension Host', 'Reload Window');
     }
     if (includesAntigravity) {
         message += ' Antigravity: restart the app.';
     }
 
     vscode.window.showInformationMessage(message, ...buttons).then(choice => {
-        if (choice === 'Reload Window') {
+        if (choice === 'Restart Extension Host') {
+            vscode.commands.executeCommand('workbench.action.restartExtensionHost');
+        } else if (choice === 'Reload Window') {
             vscode.commands.executeCommand('workbench.action.reloadWindow');
         }
     });
@@ -667,10 +669,13 @@ async function removeAllInjections(context) {
     await context.globalState.update('rtlForVsCodeAgents.injectedPaths', []);
 
     if (restored > 0) {
+        const restart = 'Restart Extension Host';
         const reload = 'Reload Window';
-        const message = `RTL: restored ${restored} file(s) to original. Reload required to apply.`;
-        vscode.window.showInformationMessage(message, reload).then(choice => {
-            if (choice === reload) {
+        const message = `RTL: restored ${restored} file(s) to original. Restart Extension Host to apply.`;
+        vscode.window.showInformationMessage(message, restart, reload).then(choice => {
+            if (choice === restart) {
+                vscode.commands.executeCommand('workbench.action.restartExtensionHost');
+            } else if (choice === reload) {
                 vscode.commands.executeCommand('workbench.action.reloadWindow');
             }
         });
@@ -906,10 +911,13 @@ async function activate(context) {
                 const updated = reinjectAll(context.extensionPath);
                 if (updated > 0) {
                     vscode.window.showInformationMessage(
-                        'RTL settings updated. Reload required to apply.',
+                        'RTL settings updated. Restart Extension Host to apply.',
+                        'Restart Extension Host',
                         'Reload Window'
                     ).then(choice => {
-                        if (choice === 'Reload Window') {
+                        if (choice === 'Restart Extension Host') {
+                            vscode.commands.executeCommand('workbench.action.restartExtensionHost');
+                        } else if (choice === 'Reload Window') {
                             vscode.commands.executeCommand('workbench.action.reloadWindow');
                         }
                     });

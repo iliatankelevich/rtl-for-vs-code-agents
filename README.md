@@ -170,6 +170,9 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v10.0.1
+- **Restart Extension Host instead of Reload Window:** Post-injection notices now offer "Restart Extension Host" as the primary action — a lighter, faster operation than a full window reload. Applies to injection, removal, and settings-change flows. "Reload Window" remains available as a secondary option, and the Copilot path still requires it.
+
 ### v10.0.0
 - **Search in conversation 🔍:** new search bar with in-place `<mark>` highlighting for every match across user + agent messages. Navigate with ↑/↓ or Enter / Shift+Enter. Case-insensitive, closes on × or Esc. Counter shows position (e.g. 3/12).
 - **Outline for floating popups:** lighter gray 2px outline on the search bar and YOLO settings popup for better visibility.
