@@ -705,9 +705,26 @@
                 font-size: 12px;
                 color: var(--vscode-menu-foreground, rgba(255,255,255,0.85));
                 display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+                min-width: 220px;
+            }
+            .yolo-settings-row {
+                display: flex;
                 align-items: center;
                 gap: 6px;
                 white-space: nowrap;
+            }
+            .yolo-settings-check {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                cursor: pointer;
+                user-select: none;
+            }
+            .yolo-settings-check input[type="checkbox"] {
+                margin: 0;
             }
             .yolo-settings-popup input[type="number"] {
                 width: 48px;
@@ -936,6 +953,7 @@
     let yoloCancelledBtn = null;      // ref to the button the user cancelled — skip until it leaves DOM
     let yoloCountdownCancel = null;   // cancel function for active countdown
     const YOLO_LS_KEY = 'rtl-yolo-delay-ms';
+    const YOLO_AUTO_APPROVE_PLANS_LS_KEY = 'rtl-yolo-auto-approve-plans';
     const YOLO_POLL_MS = 500;
     const BORDER_LS_KEY = 'rtl-user-msg-border';
     const INPUT_DIR_MODE_LS_KEY = 'rtl-input-dir-mode'; // 'uniform' (default) or 'per-line'
@@ -945,6 +963,9 @@
         const seed = (window.__RTL_CONFIG__ && typeof window.__RTL_CONFIG__.yoloDelayMs === 'number')
             ? window.__RTL_CONFIG__.yoloDelayMs : 5000;
         localStorage.setItem(YOLO_LS_KEY, String(seed));
+    }
+    if (localStorage.getItem(YOLO_AUTO_APPROVE_PLANS_LS_KEY) === null) {
+        localStorage.setItem(YOLO_AUTO_APPROVE_PLANS_LS_KEY, 'false');
     }
     if (localStorage.getItem(BORDER_LS_KEY) === null) {
         const seed = (window.__RTL_CONFIG__ && typeof window.__RTL_CONFIG__.userMessageBorder === 'boolean')
@@ -964,6 +985,12 @@
     }
     function setYoloDelayMs(ms) {
         localStorage.setItem(YOLO_LS_KEY, String(Math.max(0, ms)));
+    }
+    function getYoloAutoApprovePlans() {
+        return localStorage.getItem(YOLO_AUTO_APPROVE_PLANS_LS_KEY) === 'true';
+    }
+    function setYoloAutoApprovePlans(on) {
+        localStorage.setItem(YOLO_AUTO_APPROVE_PLANS_LS_KEY, String(!!on));
     }
 
     // ─── Input direction mode toggle ─────────────────────────────────
@@ -1094,6 +1121,29 @@
         return null;
     }
 
+    function isPlanApprovalButton(button) {
+        if (!button) return false;
+
+        const buttonText = (button.textContent || '').toLowerCase();
+        if (buttonText.includes('auto-accept')) return true;
+
+        let el = button;
+        for (let i = 0; el && i < 6; i++, el = el.parentElement) {
+            const text = (el.textContent || '').toLowerCase();
+            if (
+                text.includes('accept this plan?') &&
+                (
+                    text.includes('yes, and manually approve edits') ||
+                    text.includes('no, keep planning') ||
+                    text.includes('auto-accept')
+                )
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Show a countdown overlay, then click the button.
      * Returns a cancel function. If the user cancels (NO!) the button is NOT clicked.
@@ -1194,6 +1244,7 @@
         if (btn) {
             // Skip if this is the same button the user already cancelled
             if (btn === yoloCancelledBtn) return;
+            if (isPlanApprovalButton(btn) && !getYoloAutoApprovePlans()) return;
 
             // 0 delay = instant approve, no progress bar
             if (getYoloDelayMs() <= 0) {
@@ -1245,6 +1296,9 @@
         const popup = document.createElement('div');
         popup.className = 'yolo-settings-popup';
 
+        const delayRow = document.createElement('div');
+        delayRow.className = 'yolo-settings-row';
+
         const lbl = document.createElement('span');
         lbl.textContent = '⏱ Delay:';
 
@@ -1262,10 +1316,25 @@
         hint.className = 'yolo-settings-hint';
         hint.textContent = '(0 = instant)';
 
-        popup.appendChild(lbl);
-        popup.appendChild(input);
-        popup.appendChild(unit);
-        popup.appendChild(hint);
+        delayRow.appendChild(lbl);
+        delayRow.appendChild(input);
+        delayRow.appendChild(unit);
+        delayRow.appendChild(hint);
+        popup.appendChild(delayRow);
+
+        const plansToggle = document.createElement('label');
+        plansToggle.className = 'yolo-settings-check';
+
+        const plansCheckbox = document.createElement('input');
+        plansCheckbox.type = 'checkbox';
+        plansCheckbox.checked = getYoloAutoApprovePlans();
+
+        const plansLabel = document.createElement('span');
+        plansLabel.textContent = 'Auto Approve Plans';
+
+        plansToggle.appendChild(plansCheckbox);
+        plansToggle.appendChild(plansLabel);
+        popup.appendChild(plansToggle);
 
         // Position near the button
         popup.style.bottom = '40px';
@@ -1278,6 +1347,9 @@
             if (!isNaN(secs) && secs >= 0) {
                 setYoloDelayMs(Math.round(secs * 1000));
             }
+        });
+        plansCheckbox.addEventListener('change', () => {
+            setYoloAutoApprovePlans(plansCheckbox.checked);
         });
 
         // Close on outside click
@@ -2108,6 +2180,8 @@
     window.toggleYOLO = toggleYolo;
     window.setYoloDelay = function(secs) { setYoloDelayMs(Math.round(secs * 1000)); console.log('YOLO delay set to ' + secs + 's'); };
     window.getYoloDelay = function() { return getYoloDelayMs() / 1000; };
+    window.setYoloAutoApprovePlans = function(on) { setYoloAutoApprovePlans(on); };
+    window.getYoloAutoApprovePlans = function() { return getYoloAutoApprovePlans(); };
 
     // Expose function to check RTL status
     window.checkRTL = function(text) {

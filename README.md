@@ -18,8 +18,9 @@ Automatically detects Hebrew, Arabic, Persian, and other RTL languages and appli
 
 - **Codex (ChatGPT) support** — Full RTL support for OpenAI Codex: messages, input, title, Previous Messages, nav buttons, YOLO auto-approve, user borders, and neutral text colors
 - **Smart message collapse for Codex** — Long user messages are automatically collapsed to ~5 lines with a fade-out effect. Hover to reveal a **Show more** button; click to expand the full message (and **Show less** to collapse back). Keeps the chat clean without losing context!
-- **YOLO Mode 💪 (auto-approve with countdown)** — toggle YOLO mode to auto-approve all tool calls. A progress bar counts down before each approval, with a **NO!** button to cancel. Right-click the 💪 button to set the countdown delay (0 = instant, no progress bar). The setting is persistent across sessions.
+- **YOLO Mode 💪 (auto-approve with countdown)** — toggle YOLO mode to auto-approve all tool calls. A progress bar counts down before each approval, with a **NO!** button to cancel. Right-click the 💪 button to set the countdown delay and toggle `Auto Approve Plans` (off by default), so `Accept this plan?` stays manual unless you enable it. The settings are persistent across sessions.
 ![YOLO Mode](ReadmeImages/YoloModeButton.png)
+![Auto Approve Plans](ReadmeImages/AutoApprovePlans.png)
 
 - **User message navigation (↑↓)** — jump between user messages in Claude Code with cyclic up/down buttons in the input footer
 ![User message navigation](ReadmeImages/UserMessageNavigation.png)
@@ -170,6 +171,9 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v10.1.0
+- **YOLO plan approval control:** Added `Auto Approve Plans` to the YOLO right-click popup, off by default, so `Accept this plan?` stays manual unless explicitly enabled
+
 ### v10.0.1
 - **Restart Extension Host instead of Reload Window:** Post-injection notices now offer "Restart Extension Host" as the primary action — a lighter, faster operation than a full window reload. Applies to injection, removal, and settings-change flows. "Reload Window" remains available as a secondary option, and the Copilot path still requires it.
 
@@ -204,8 +208,8 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 - **User message border toggle:** New `userMessageBorder` setting and instant right-click toggle on ↑↓ navigation buttons — toggle the coral border on user messages on/off without reload (persisted via localStorage)
 
 ### v8.1.0
-- **YOLO Mode 💪 (auto-approve with countdown):** Toggle YOLO mode with the 💪 button to auto-approve all tool calls. A countdown progress bar with a **NO!** cancel button appears before each approval. Right-click the button to adjust the delay (0 = instant). Setting is persistent via localStorage.
-- **YOLO countdown settings:** Configurable via VS Code Settings (`yoloCountdownSeconds`) or right-click on the 💪 button (instant, no reload needed)
+- **YOLO Mode 💪 (auto-approve with countdown):** Toggle YOLO mode with the 💪 button to auto-approve all tool calls. A countdown progress bar with a **NO!** cancel button appears before each approval. Right-click the button to adjust the delay (0 = instant) and control whether plan approvals are auto-accepted. Settings are persistent via localStorage.
+- **YOLO countdown settings:** Configurable via VS Code Settings (`yoloCountdownSeconds`) or right-click on the 💪 button for instant changes, including the new `Auto Approve Plans` toggle
 
 ### v8.0.1
 - **Fix BiDi ordering in mixed Hebrew/English lines:** Lines starting with bold text followed by English in parentheses (e.g. `**term** (English explanation)`) now correctly align RTL. Fixed by injecting RLM anchors and switching from `unicode-bidi: plaintext` to `isolate`.
