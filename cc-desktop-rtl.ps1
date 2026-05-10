@@ -10,10 +10,7 @@
 # fetches the main script, strips the BOM, and runs it as a script block.
 
 $ErrorActionPreference = 'Stop'
-# Use 'refs/heads/main' rather than just 'main' so Fastly serves a fresh copy
-# every install run. The 5-minute Fastly cache on the short URL would otherwise
-# delay propagation of urgent fixes that users hit during installation.
-$mainUrl = 'https://raw.githubusercontent.com/GuyRonnen/rtl-for-vs-code-agents/refs/heads/main/CC-Desktop-RTL-Search-YOLO.ps1'
+$mainUrl = 'https://raw.githubusercontent.com/GuyRonnen/rtl-for-vs-code-agents/main/CC-Desktop-RTL-Search-YOLO.ps1'
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $src = (Invoke-WebRequest -Uri $mainUrl -UseBasicParsing).Content
