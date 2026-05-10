@@ -171,6 +171,9 @@ powershell -ExecutionPolicy Bypass -File .\diagnose-rtl.ps1
 <details>
 <summary>Changelog</summary>
 
+### v10.1.1
+- **WSL/Remote detection:** Added support for detecting Claude Code, Codex, and Gemini installations under VS Code/Cursor remote server extension folders such as `~/.vscode-server/extensions`
+
 ### v10.1.0
 - **YOLO plan approval control:** Added `Auto Approve Plans` to the YOLO right-click popup, off by default, so `Accept this plan?` stays manual unless explicitly enabled
 
