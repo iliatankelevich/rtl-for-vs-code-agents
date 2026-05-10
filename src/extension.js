@@ -40,7 +40,10 @@ function listExtensionInstallations() {
     const home = os.homedir();
     const locations = [
         { label: 'VS Code', basePath: path.join(home, '.vscode', 'extensions') },
+        { label: 'VS Code (Remote/WSL)', basePath: path.join(home, '.vscode-server', 'extensions') },
+        { label: 'VS Code Insiders (Remote/WSL)', basePath: path.join(home, '.vscode-server-insiders', 'extensions') },
         { label: 'Cursor', basePath: path.join(home, '.cursor', 'extensions') },
+        { label: 'Cursor (Remote/WSL)', basePath: path.join(home, '.cursor-server', 'extensions') },
         { label: 'Antigravity', basePath: path.join(home, '.antigravity', 'extensions') }
     ];
 
