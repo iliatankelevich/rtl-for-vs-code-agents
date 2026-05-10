@@ -78,6 +78,10 @@ if (-not $IsAdmin) {
         $RepoUrl = "https://raw.githubusercontent.com/shraga100/claude-desktop-rtl-patch/main/patch.ps1"
         Write-Host "Downloading script to temp file for elevation..." -ForegroundColor Cyan
         $content = Invoke-RestMethod -Uri $RepoUrl
+        # Strip any BOM that came back in the decoded string before re-emitting
+        # the file with WriteAllText(UTF8Encoding(true)), otherwise we end up
+        # with a double BOM that PowerShell can't parse.
+        $content = $content.TrimStart([char]0xFEFF)
         [System.IO.File]::WriteAllText($TmpScript, $content, [System.Text.UTF8Encoding]::new($true))
         Start-Process -FilePath PowerShell.exe -Verb RunAs -ArgumentList "-NoProfile -NoExit -ExecutionPolicy Bypass -File `"$TmpScript`"$autoArg"
     }
