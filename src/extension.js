@@ -146,7 +146,9 @@ function buildConfigBlock() {
     const config = getConfig();
     const yoloSeconds = Number(config.get('yoloCountdownSeconds', 5)) || 0;
     const userMessageBorder = config.get('userMessageBorder', true);
-    return `window.__RTL_CONFIG__ = ${JSON.stringify({ yoloDelayMs: yoloSeconds * 1000, userMessageBorder })};`;
+    const collapsedUserMessageLines = Number(config.get('collapsedUserMessageLines', 3)) || 3;
+    const stickyUserMessage = config.get('stickyUserMessage', false);
+    return `window.__RTL_CONFIG__ = ${JSON.stringify({ yoloDelayMs: yoloSeconds * 1000, userMessageBorder, collapsedUserMessageLines, stickyUserMessage })};`;
 }
 
 const PLAN_MARKER = 'RTL-Plan-Injection';
@@ -910,7 +912,9 @@ async function activate(context) {
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('rtlForVsCodeAgents.yoloCountdownSeconds') ||
-                e.affectsConfiguration('rtlForVsCodeAgents.userMessageBorder')) {
+                e.affectsConfiguration('rtlForVsCodeAgents.userMessageBorder') ||
+                e.affectsConfiguration('rtlForVsCodeAgents.collapsedUserMessageLines') ||
+                e.affectsConfiguration('rtlForVsCodeAgents.stickyUserMessage')) {
                 const updated = reinjectAll(context.extensionPath);
                 if (updated > 0) {
                     vscode.window.showInformationMessage(

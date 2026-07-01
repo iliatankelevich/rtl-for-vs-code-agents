@@ -366,6 +366,12 @@
             return; // Already injected
         }
 
+        // Read layout settings from injected config (VS Code settings; require reload to change)
+        const cfg = window.__RTL_CONFIG__ || {};
+        const collapsedLines = (typeof cfg.collapsedUserMessageLines === 'number' && cfg.collapsedUserMessageLines >= 3)
+            ? cfg.collapsedUserMessageLines : 3;
+        const stickyUserMessage = cfg.stickyUserMessage === true;
+
         const style = document.createElement('style');
         style.id = RTL_STYLE_ID;
         style.textContent = `
@@ -496,10 +502,15 @@
                 max-width: unset !important;
             }
 
-            /* Expand collapsed user messages from ~3 lines to ~5 lines */
+            /* Collapsed user message height — configurable line count (default: Claude's ~3 lines) */
             [class*="userMessage_"] [class*="content_"][class*="collapsed_"] {
-                max-height: 100px !important;
+                max-height: ${collapsedLines}lh !important;
             }
+            ${stickyUserMessage ? '' : `
+            /* Unpin the latest user message from the top of the conversation */
+            [class*="stickyHeader_"] {
+                position: static !important;
+            }`}
 
             /* Codex user message collapse (Show more / Show less) */
             [data-content-search-unit-key$=":user"] .text-size-chat.rtl-collapsed {
